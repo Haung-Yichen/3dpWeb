@@ -1,0 +1,1176 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>操控介面</title>
+    <style>
+        :root {
+            --primary-color: #1e3a8a;
+            --secondary-color: #3b82f6;
+            --accent-color: #10b981;
+            --warning-color: #f59e0b;
+            --danger-color: #ef4444;
+            --dark-bg: #111827;
+            --dark-surface: #1f2937;
+            --dark-card: #374151;
+            --text-primary: #f9fafb;
+            --text-secondary: #d1d5db;
+            --border-color: #4b5563;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: "Inter", "Segoe UI", "Microsoft JhengHei", -apple-system, BlinkMacSystemFont, sans-serif;
+            background: var(--dark-bg);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .app-container {
+            display: flex;
+            min-height: 100vh;
+        }
+
+        /* 側邊欄 */
+        .sidebar {
+            width: 280px;
+            background: var(--dark-surface);
+            border-right: 1px solid var(--border-color);
+            padding: 20px;
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 1000;
+        }
+
+        .sidebar-header {
+            margin-bottom: 30px;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .logo {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 5px;
+        }
+
+        .logo-subtitle {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+        }
+
+        .nav-section {
+            margin-bottom: 30px;
+        }
+
+        .nav-title {
+            font-size: 0.75rem;
+            font-weight: 600;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-bottom: 15px;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            padding: 12px 16px;
+            margin-bottom: 4px;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            color: var(--text-secondary);
+            text-decoration: none;
+        }
+
+        .nav-item:hover {
+            background: var(--dark-card);
+            color: var(--text-primary);
+        }
+
+        .nav-item.active {
+            background: var(--primary-color);
+            color: var(--text-primary);
+        }
+
+        .nav-icon {
+            width: 20px;
+            height: 20px;
+            margin-right: 12px;
+            opacity: 0.7;
+        }
+
+        /* 主內容區 */
+        .main-content {
+            flex: 1;
+            margin-left: 280px;
+            padding: 20px;
+        }
+
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 30px;
+            padding: 20px 0;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 700;
+            color: var(--text-primary);
+        }
+
+        .status-indicator {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: var(--danger-color);
+            animation: pulse 2s infinite;
+        }
+
+        .status-dot.connected {
+            background: var(--accent-color);
+        }
+
+        @keyframes pulse {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        /* 儀表板網格 */
+        .dashboard-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: var(--dark-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            border-color: var(--secondary-color);
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.1);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            color: var(--text-primary);
+        }
+
+        .card-icon {
+            width: 24px;
+            height: 24px;
+            opacity: 0.7;
+        }
+
+        /* 按鈕樣式 */
+        .buttons-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+            gap: 12px;
+        }
+
+        button {
+            padding: 12px 16px;
+            font-size: 14px;
+            font-weight: 500;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            background: var(--dark-surface);
+            color: var(--text-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+            min-height: 40px;
+        }
+
+        button:hover {
+            background: var(--dark-bg);
+            border-color: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        button:active {
+            transform: translateY(0);
+        }
+
+        /* 按鈕顏色變體 */
+        .btn-primary {
+            background: var(--primary-color);
+            border-color: var(--primary-color);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: #1e40af;
+            border-color: #1e40af;
+        }
+
+        .btn-success {
+            background: var(--accent-color);
+            border-color: var(--accent-color);
+            color: white;
+        }
+
+        .btn-success:hover {
+            background: #059669;
+            border-color: #059669;
+        }
+
+        .btn-warning {
+            background: var(--warning-color);
+            border-color: var(--warning-color);
+            color: white;
+        }
+
+        .btn-warning:hover {
+            background: #d97706;
+            border-color: #d97706;
+        }
+
+        .btn-danger {
+            background: var(--danger-color);
+            border-color: var(--danger-color);
+            color: white;
+        }
+
+        .btn-danger:hover {
+            background: #dc2626;
+            border-color: #dc2626;
+        }
+
+        /* 輸入框樣式 */
+        input[type="number"] {
+            padding: 12px 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            font-size: 14px;
+            background: var(--dark-surface);
+            color: var(--text-primary);
+            transition: all 0.2s ease;
+            outline: none;
+            width: 100%;
+        }
+
+        input[type="number"]:focus {
+            border-color: var(--secondary-color);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        /* 狀態顯示 */
+        .status-display {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--dark-surface);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-value {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* 進度條 */
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: var(--dark-surface);
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--accent-color), var(--secondary-color));
+            transition: width 0.3s ease;
+            border-radius: 4px;
+        }
+
+        /* 溫度顯示 */
+        .temp-display {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 8px 12px;
+            background: var(--dark-surface);
+            border-radius: 6px;
+            font-weight: 600;
+            font-size: 14px;
+            min-width: 80px;
+        }
+
+        .temp-display.hot {
+            color: var(--danger-color);
+        }
+
+        .temp-display.warm {
+            color: var(--warning-color);
+        }
+
+        .temp-display.cool {
+            color: var(--secondary-color);
+        }
+
+        /* 視訊容器 */
+        .camera-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #cameraStream {
+            max-width: 100%;
+            height: auto;
+            border: 2px solid var(--border-color);
+            border-radius: 12px;
+            transition: all 0.3s ease;
+        }
+
+        #cameraStream:hover {
+            border-color: var(--secondary-color);
+        }
+
+        #cameraStatus {
+            margin-top: 12px;
+            padding: 8px 16px;
+            background: var(--dark-surface);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+            display: inline-block;
+        }
+
+        /* 監控視窗 */
+        #monitorWindow {
+            background: var(--dark-surface);
+            border-radius: 8px;
+            padding: 16px;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        #uploadStatus {
+            color: var(--secondary-color);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #connectionStatus {
+            color: var(--warning-color);
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #espMessage {
+            color: var(--accent-color);
+            font-weight: 600;
+        }
+
+        /* 檔案名稱顯示 */
+        #fileName {
+            margin-top: 15px;
+            padding: 12px;
+            background: var(--dark-surface);
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            text-align: center;
+            color: var(--text-secondary);
+        }
+
+        /* 響應式設計 */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.open {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .buttons-container {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        input[type="number"] {
+            padding: 12px 16px;
+            border: 2px solid rgba(102, 126, 234, 0.2);
+            border-radius: 12px;
+            font-size: 15px;
+            font-weight: 500;
+            background: rgba(255, 255, 255, 0.9);
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="number"]:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            background: white;
+        }
+
+        #fileName {
+            margin-top: 15px;
+            font-size: 16px;
+            color: #667eea;
+            text-align: center;
+            font-weight: 600;
+            padding: 8px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 8px;
+        }
+
+        #monitorWindow {
+            margin-top: 20px;
+            padding: 20px;
+            border-radius: 12px;
+            background: linear-gradient(135deg, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.05));
+            font-size: 14px;
+            color: #15c0cc;
+            line-height: 1.8;
+            border: 1px solid rgba(102, 126, 234, 0.1);
+        }
+
+        #uploadStatus {
+            color: #667eea;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #connectionStatus {
+            color: #ff9800;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        #espMessage {
+            color: #4CAF50;
+            font-weight: 600;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .temp-display {
+            min-width: 120px;
+            text-align: center;
+            font-weight: 700;
+            font-size: 16px;
+            padding: 8px 12px;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+        }
+
+        .temp-display:hover {
+            background: white;
+            border-color: rgba(102, 126, 234, 0.3);
+        }
+
+        #nozzleTempDisplay {
+            color: #4CAF50;
+        }
+
+        #bedTempDisplay {
+            color: #f44336;
+        }
+
+        #filamentWeightDisplay {
+            color: #9c27b0;
+        }
+
+        #remainingTimeDisplay {
+            color: #ff5722;
+        }
+
+        #progressDisplay {
+            color: #009688;
+        }
+
+        #startCameraButton {
+            background: linear-gradient(135deg, #4CAF50, #45a049);
+            color: white;
+            box-shadow: 0 4px 15px rgba(76, 175, 80, 0.3);
+        }
+
+        #startCameraButton:hover {
+            background: linear-gradient(135deg, #45a049, #3d8b40);
+            box-shadow: 0 6px 20px rgba(76, 175, 80, 0.4);
+        }
+
+        #stopCameraButton {
+            background: linear-gradient(135deg, #f44336, #e53935);
+            color: white;
+            box-shadow: 0 4px 15px rgba(244, 67, 54, 0.3);
+        }
+
+        #stopCameraButton:hover {
+            background: linear-gradient(135deg, #e53935, #d32f2f);
+            box-shadow: 0 6px 20px rgba(244, 67, 54, 0.4);
+        }
+
+        .section-title {
+            font-size: 1.2rem;
+            font-weight: 700;
+            color: #333;
+            margin-bottom: 20px;
+            text-align: center;
+            position: relative;
+        }
+
+        .section-title::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 3px;
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            border-radius: 2px;
+        }
+
+        .camera-container {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        #cameraStream {
+            max-width: 100%;
+            height: auto;
+            border: 3px solid rgba(102, 126, 234, 0.2);
+            border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            transition: all 0.3s ease;
+        }
+
+        #cameraStream:hover {
+            border-color: rgba(102, 126, 234, 0.4);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        #cameraStatus {
+            color: #666;
+            font-size: 14px;
+            margin-top: 12px;
+            font-weight: 500;
+            padding: 8px 16px;
+            background: rgba(102, 126, 234, 0.1);
+            border-radius: 20px;
+            display: inline-block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                max-width: 100%;
+            }
+
+            .control-panel {
+                grid-template-columns: 1fr;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .buttons-container {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="app-container">
+        <!-- 側邊欄 -->
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <div class="logo">3D Print Hub</div>
+                <div class="logo-subtitle">專業列印控制中心</div>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">主要功能</div>
+                <a href="#" class="nav-item active">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                    </svg>
+                    儀表板
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                        <path fill-rule="evenodd"
+                            d="M4 5a2 2 0 012-2v1a1 1 0 001 1h6a1 1 0 001-1V3a2 2 0 012 2v6a2 2 0 01-2 2H6a2 2 0 01-2-2V5zm3 4a1 1 0 000 2h.01a1 1 0 100-2H7zm3 0a1 1 0 000 2h3a1 1 0 100-2h-3z" />
+                    </svg>
+                    列印控制
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path
+                            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                    </svg>
+                    溫度監控
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
+                    </svg>
+                    視訊監控
+                </a>
+            </div>
+
+            <div class="nav-section">
+                <div class="nav-title">系統</div>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+                    </svg>
+                    設定
+                </a>
+                <a href="#" class="nav-item">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
+                    </svg>
+                    說明
+                </a>
+            </div>
+        </div>
+
+        <!-- 主內容區 -->
+        <div class="main-content">
+            <!-- 頁面標題 -->
+            <div class="header">
+                <h1 class="page-title">儀表板</h1>
+                <div class="status-indicator">
+                    <div class="status-dot" id="connectionDot"></div>
+                    <span id="connectionStatus">連線中...</span>
+                </div>
+            </div>
+
+            <!-- 儀表板網格 -->
+            <div class="dashboard-grid">
+                <!-- 列印控制 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">列印控制</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                        </svg>
+                    </div>
+                    <div class="buttons-container">
+                        <button id="startPrintButton" class="btn-success">開始列印</button>
+                        <button id="pausePrintButton" class="btn-warning">暫停列印</button>
+                        <button id="cstopPrintingButton" class="btn-danger">停止列印</button>
+                        <button id="homeButton" class="btn-primary">回原點</button>
+                        <button id="emergencyStopButton" class="btn-danger"
+                            style="background: #dc2626; border-color: #dc2626; font-weight: 700;">緊急停止</button>
+                    </div>
+                </div>
+
+                <!-- 檔案管理 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">檔案管理</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
+                        </svg>
+                    </div>
+                    <div class="buttons-container">
+                        <button id="actionButton" class="btn-primary">選擇檔案</button>
+                        <button id="uploadButton" class="btn-success">上傳檔案</button>
+                    </div>
+                    <input type="file" id="fileInput" />
+                    <div id="fileName">未選擇檔案</div>
+                </div>
+
+                <!-- 溫度監控 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">溫度監控</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
+                        </svg>
+                    </div>
+                    <div class="buttons-container">
+                        <input type="number" id="nozzleTempInput" placeholder="噴嘴溫度 (°C)">
+                        <button id="setNozzleTempButton" class="btn-primary">設定噴嘴</button>
+                    </div>
+                    <div class="buttons-container">
+                        <input type="number" id="bedTempInput" placeholder="熱床溫度 (°C)">
+                        <button id="setBedTempButton" class="btn-primary">設定熱床</button>
+                    </div>
+                    <div class="buttons-container" style="margin-top:15px;">
+                        <button id="getNozzleTempButton" class="btn-primary">請求噴嘴溫度</button>
+                        <span id="nozzleTempDisplay" class="temp-display">-- °C</span>
+                    </div>
+                    <div class="buttons-container" style="margin-top:10px;">
+                        <button id="getBedTempButton" class="btn-primary">請求熱床溫度</button>
+                        <span id="bedTempDisplay" class="temp-display">-- °C</span>
+                    </div>
+                </div>
+
+                <!-- 視訊監控 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">視訊監控</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                        </svg>
+                    </div>
+                    <div class="camera-container">
+                        <img id="cameraStream" src="" alt="ESP32-CAM 視訊串流" style="display: none;">
+                        <div id="cameraStatus">鏡頭未開啟</div>
+                    </div>
+                    <div class="buttons-container">
+                        <button id="startCameraButton" class="btn-success">開啟鏡頭</button>
+                        <button id="stopCameraButton" class="btn-danger">關閉鏡頭</button>
+                    </div>
+                </div>
+
+                <!-- 列印狀態 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">列印狀態</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                        </svg>
+                    </div>
+                    <div class="buttons-container" style="margin-top:10px;">
+                        <button id="getFilamentWeightButton" class="btn-primary">請求耗材重量</button>
+                        <span id="filamentWeightDisplay" class="temp-display">-- g</span>
+                    </div>
+                    <div class="buttons-container" style="margin-top:10px;">
+                        <button id="getRemainingTimeButton" class="btn-primary">請求剩餘時間</button>
+                        <span id="remainingTimeDisplay" class="temp-display">-- min</span>
+                    </div>
+                    <div class="buttons-container" style="margin-top:10px;">
+                        <button id="getProgressButton" class="btn-primary">請求進度</button>
+                        <span id="progressDisplay" class="temp-display">-- %</span>
+                    </div>
+                </div>
+
+                <!-- 系統狀態 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">系統狀態</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
+                        </svg>
+                    </div>
+                    <div id="monitorWindow">
+                        <div id="uploadStatus">尚未上傳檔案</div>
+                        <div id="monitorConnectionStatus">正在連接到 ESP32...</div>
+                        <div id="espMessage"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let selectedFile = null;
+        let cameraStream = null;
+        let isCameraOn = false;
+
+        // 選擇檔案
+        document.getElementById('actionButton').addEventListener('click', function () {
+            document.getElementById('fileInput').click();
+        });
+
+        document.getElementById('fileInput').addEventListener('change', function (event) {
+            const fileNameElement = document.getElementById('fileName');
+            if (event.target.files.length > 0) {
+                selectedFile = event.target.files[0];
+                fileNameElement.textContent = '選擇的檔案: ' + selectedFile.name;
+            } else {
+                selectedFile = null;
+                fileNameElement.textContent = '未選擇檔案';
+            }
+        });
+
+        // 上傳檔案
+        document.getElementById('uploadButton').addEventListener('click', function () {
+            if (!selectedFile) {
+                document.getElementById('uploadStatus').textContent = '請先選擇檔案';
+                return;
+            }
+
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send('cStartTransmission');
+                document.getElementById('uploadStatus').textContent = '等待 ESP32 回覆 STM ok...';
+            } else {
+                document.getElementById('uploadStatus').textContent = 'WebSocket 未連線，無法上傳';
+            }
+        });
+
+        // 開始列印
+        document.getElementById('startPrintButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cStartToPrint");
+                document.getElementById('uploadStatus').textContent = "已送出開始列印指令";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
+            }
+        });
+
+        // 暫停列印
+        document.getElementById('pausePrintButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cPausePrinting");
+                document.getElementById('uploadStatus').textContent = "已送出暫停列印指令";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
+            }
+        });
+
+        // 停止列印
+        document.getElementById('cstopPrintingButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cStopPrinting");
+                document.getElementById('uploadStatus').textContent = "已送出停止列印指令";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
+            }
+        });
+
+        // 回原點
+        document.getElementById('homeButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cGoHome");
+                document.getElementById('uploadStatus').textContent = "已送出回原點指令";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
+            }
+        });
+
+        // 緊急停止
+        document.getElementById('emergencyStopButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cEmergencyStop");
+                document.getElementById('uploadStatus').textContent = "已送出緊急停止指令";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出緊急停止指令";
+            }
+        });
+
+        // 設定噴嘴溫度
+        document.getElementById('setNozzleTempButton').addEventListener('click', function () {
+            const temp = document.getElementById('nozzleTempInput').value;
+            if (!temp) {
+                document.getElementById('uploadStatus').textContent = "請輸入噴嘴溫度";
+                return;
+            }
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cSetNozzleTemp<" + temp + ">");
+                document.getElementById('uploadStatus').textContent = "已送出噴嘴溫度設定: " + temp + "°C";
+                document.getElementById('nozzleTempDisplay').textContent = temp + " °C";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出設定";
+            }
+        });
+
+        // 設定熱床溫度
+        document.getElementById('setBedTempButton').addEventListener('click', function () {
+            const temp = document.getElementById('bedTempInput').value;
+            if (!temp) {
+                document.getElementById('uploadStatus').textContent = "請輸入熱床溫度";
+                return;
+            }
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cSetBedTemp<" + temp + ">");
+                document.getElementById('uploadStatus').textContent = "已送出熱床溫度設定: " + temp + "°C";
+                document.getElementById('bedTempDisplay').textContent = temp + " °C";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出設定";
+            }
+        });
+
+        // 請求噴嘴溫度
+        document.getElementById('getNozzleTempButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cReqNozzleTemp");
+                document.getElementById('uploadStatus').textContent = "已送出請求噴嘴溫度";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
+            }
+        });
+
+        // 請求熱床溫度
+        document.getElementById('getBedTempButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cReqBedTemp");
+                document.getElementById('uploadStatus').textContent = "已送出請求熱床溫度";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
+            }
+        });
+
+        // 請求耗材重量
+        document.getElementById('getFilamentWeightButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cReqFilamentWeight");
+                document.getElementById('uploadStatus').textContent = "已送出請求耗材重量";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
+            }
+        });
+
+        // 請求剩餘列印時間
+        document.getElementById('getRemainingTimeButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cReqRemainningTime");
+                document.getElementById('uploadStatus').textContent = "已送出請求剩餘列印時間";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
+            }
+        });
+
+        // 請求列印進度
+        document.getElementById('getProgressButton').addEventListener('click', function () {
+            if (ws.readyState === WebSocket.OPEN) {
+                ws.send("cReqProgress");
+                document.getElementById('uploadStatus').textContent = "已送出請求列印進度";
+            } else {
+                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
+            }
+        });
+
+        // 開啟鏡頭
+        document.getElementById('startCameraButton').addEventListener('click', function () {
+            if (!isCameraOn) {
+                startCamera();
+            } else {
+                document.getElementById('cameraStatus').textContent = "鏡頭已經開啟";
+            }
+        });
+
+        // 關閉鏡頭
+        document.getElementById('stopCameraButton').addEventListener('click', function () {
+            if (isCameraOn) {
+                stopCamera();
+            } else {
+                document.getElementById('cameraStatus').textContent = "鏡頭已經關閉";
+            }
+        });
+
+        // 開啟鏡頭功能 - 通過WebSocket發送指令
+        // 開啟鏡頭功能 - 直接從 Flask 伺服器獲取串流
+        function startCamera() {
+            const cameraImg = document.getElementById('cameraStream');
+            const cameraStatus = document.getElementById('cameraStatus');
+
+            if (isCameraOn) {
+                cameraStatus.textContent = "鏡頭已經開啟";
+                return;
+            }
+
+            console.log("正在開啟 USB 鏡頭串流...");
+
+            // [ 關鍵 ] 
+            // 將 src 指向您 main.py 中的 /video_feed 路由。
+            // 使用相對路徑即可，瀏覽器會自動使用目前伺服器的主機和埠號 (http://...:5000/video_feed)
+            cameraImg.src = '/video_feed';
+
+            cameraImg.style.display = 'block';
+            cameraStatus.textContent = "正在連接視訊串流...";
+            isCameraOn = true;
+
+            // 監聽圖片載入成功
+            cameraImg.onload = function () {
+                cameraStatus.textContent = "鏡頭已開啟";
+                console.log("視訊串流已連接");
+            };
+
+            // 監聽圖片載入失敗
+            cameraImg.onerror = function () {
+                cameraStatus.textContent = "視訊串流連接失敗 (請檢查伺服器鏡頭)";
+                cameraImg.style.display = 'none';
+                isCameraOn = false;
+                console.error("無法載入 /video_feed");
+            };
+        }
+
+        // 關閉鏡頭功能 - 通過WebSocket發送指令
+        function stopCamera() {
+            const cameraImg = document.getElementById('cameraStream');
+            const cameraStatus = document.getElementById('cameraStatus');
+
+            if (!isCameraOn) {
+                cameraStatus.textContent = "鏡頭已經關閉";
+                return;
+            }
+
+            console.log("正在關閉 USB 鏡頭串流...");
+
+            // [ 關鍵 ] 
+            // 只要清除 src，瀏覽器就會停止請求串流
+            cameraImg.src = '';
+
+            cameraImg.style.display = 'none';
+            cameraStatus.textContent = "鏡頭已關閉";
+            isCameraOn = false;
+        }
+
+        // 動態建立 WebSocket 連線到 "目前載入網頁的伺服器"
+        // 1. 取得目前網頁的協定 (http: -> ws: 或 https: -> wss:)
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+        // 2. 取得目前的主機和埠號 (例如 192.168.1.10:5000)
+        const wsHost = window.location.host;
+        // 3. 組合 Flask 伺服器上 @sock.route('/ws') 的路徑
+        const wsUrl = `${wsProtocol}//${wsHost}/ws`;
+
+        console.log("正在連線到 WebSocket 伺服器:", wsUrl);
+        const ws = new WebSocket(wsUrl); // <-- [ 最終連線 ]
+
+        // 記錄重傳次數
+        let retryCount = 0;
+
+        ws.onopen = function () {
+            console.log("已成功連線到後端 Flask 伺服器"); // 文字修改
+            document.getElementById('connectionStatus').textContent = "連線成功！";
+            // [ 次要修改 ]
+            // 您有兩個 ID 叫 'connectionStatus'，我們在這裡修正這個問題
+            document.getElementById('connectionDot').classList.add('connected');
+
+            // 同時更新「系統狀態」卡片中的文字
+            const monitorStatus = document.querySelector('#monitorWindow #connectionStatus');
+            if (monitorStatus) {
+                monitorStatus.textContent = "已連線到伺服器";
+            }
+        };
+
+        ws.onmessage = function (event) {
+            console.log("收到訊息:", event.data);
+
+            const espMessage = document.getElementById('espMessage');
+            espMessage.textContent = "伺服器訊息: " + event.data;
+
+            if (event.data === 'STM32 ok') {
+                ws.send('cSetFilename<' + selectedFile.name + '>');
+                document.getElementById('uploadStatus').textContent = 'ESP32 已回覆 STM ok，送出檔名...';
+            } else if (event.data === 'Name ok') {
+                document.getElementById('uploadStatus').textContent = 'ESP32 已確認檔名，開始上傳檔案...';
+                const formData = new FormData();
+                formData.append('file', selectedFile);
+
+                fetch('http://192.168.1.160:5000/upload', {
+                    method: 'POST',
+                    body: formData
+                })
+                    .then(response => response.text())
+                    .then(data => {
+                        console.log('伺服器回應:', data);
+                        document.getElementById('uploadStatus').textContent = '檔案上傳成功 可以開始列印';
+                    })
+                    .catch(error => {
+                        console.error('上傳失敗:', error);
+                        document.getElementById('uploadStatus').textContent = '檔案上傳失敗';
+                    });
+            } else if (event.data.startsWith("NozzleTemp:")) {
+                const temp = event.data.split(":")[1];
+                document.getElementById('nozzleTempDisplay').textContent = temp + " °C";
+            } else if (event.data.startsWith("BedTemp:")) {
+                const temp = event.data.split(":")[1];
+                document.getElementById('bedTempDisplay').textContent = temp + " °C";
+            } else if (event.data.startsWith("FilamentWeight:")) {
+                const weight = event.data.split(":")[1];
+                document.getElementById('filamentWeightDisplay').textContent = weight + " g";
+            } else if (event.data.startsWith("RemainingTime:")) {
+                const time = event.data.split(":")[1];
+                document.getElementById('remainingTimeDisplay').textContent = time + " min";
+            } else if (event.data.startsWith("Progress:")) {
+                const progress = event.data.split(":")[1];
+                document.getElementById('progressDisplay').textContent = progress + " %";
+            }
+        };
+
+        ws.onclose = function () {
+            console.log("與後端 Flask 伺服器的連線已中斷");
+            document.getElementById('connectionStatus').textContent = "連線中斷";
+            document.getElementById('connectionDot').classList.remove('connected');
+
+            const monitorStatus = document.querySelector('#monitorWindow #connectionStatus');
+            if (monitorStatus) {
+                monitorStatus.textContent = "連線中斷，嘗試重連...";
+            }
+            const espMessage = document.getElementById('espMessage');
+            espMessage.textContent = "連線中斷";
+
+            // (您可以在這裡加入重連邏輯)
+        };
+
+</script>
+</body>
+</html>
