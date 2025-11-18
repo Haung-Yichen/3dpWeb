@@ -15,7 +15,7 @@ CORS(app)
 sock = Sock(app)
 
 # --- ESP32 相關 (不變) ---
-esp32_ip = "ws://192.168.1.147:82"
+esp32_ip = "ws://192.168.1.146:82"
 ws_to_esp32 = None
 upload_done_event = threading.Event()
 reconnect_attempts = 0
@@ -197,49 +197,6 @@ def attempt_reconnect_esp32():
             if reconnect_attempts >= max_reconnect_attempts:
                 print("重連 ESP32 失敗，已達到最大嘗試次數")
 
-
-def send_file_in_background(filepath):
-    # ... (此處程式碼與您原本的 'web/main.py' 完全相同，故省略) ...
-    global ws_to_esp32, upload_done_event, is_connected_to_esp32
-    if not is_connected_to_esp32 or ws_to_esp32 is None:
-        print("背景上傳：ESP32 未連接，任務中止。")
-        return
-    print(f"背景上傳：開始傳送檔案 {os.path.basename(filepath)}")
-    try:
-        sha256 = hashlib.sha256()
-        chunk_size = 1024
-        total_bytes = 0
-        with open(filepath, "rb") as f:
-            while True:
-                chunk = f.read(chunk_size)
-                if not chunk:
-                    break
-                total_bytes += len(chunk)
-                sha256.update(chunk)
-                ws_to_esp32.send(chunk.decode('utf-8'))
-                time.sleep(0.0001)
-        print("總位元組:", total_bytes)
-        print("SHA256:", sha256.hexdigest())
-        time.sleep(0.1)
-        ws_to_esp32.send("end")
-        ws_to_esp32.send(f"cTransmissionOver<{total_bytes}>")
-        time.sleep(0.1)
-        print("背景上傳：檔案傳送完畢，等待 ESP32 回應 'ok'...")
-        if upload_done_event.wait(timeout=50):
-            upload_done_event.clear()
-            print("背景上傳：ESP32 確認收到，上傳成功。")
-        else:
-            print("背景上傳：等待 ESP32 回應逾時。")
-    except Exception as e:
-        print(f"背景上傳發生錯誤: {e}")
-    finally:
-        try:
-            os.remove(filepath)
-            print(f"背景上傳：已刪除暫存檔案 {filepath}")
-        except OSError as e:
-            print(f"刪除暫存檔案 {filepath} 失敗: {e}")
-
-
 # -----------------------------------------------------------------
 # [ 修改：視訊串流函式 ]
 # -----------------------------------------------------------------
@@ -286,31 +243,61 @@ def index():
 
 @app.route("/upload", methods=["POST"])
 def upload_file():
-    # ... (此處程式碼與您原本的 'web/main.py' 完全相同，故省略) ...
-    global is_connected_to_esp32
+    # 使用 main.py 的全域變數
+    global upload_done_event, is_connected_to_esp32, ws_to_esp32
+    spend_time = time.time()
+
+    # 檢查連接狀態
     if not is_connected_to_esp32 or ws_to_esp32 is None:
         return "ESP32 連接未建立", 503
+
     if "file" not in request.files:
         return "未收到檔案", 400
+
     file = request.files["file"]
     if file.filename == "":
         return "檔案名稱無效", 400
+
+    print(f"收到檔案上傳請求: {file.filename}")
+    time.sleep(0.01)
+
     try:
-        temp_dir = tempfile.gettempdir()
-        safe_filename = os.path.basename(file.filename)
-        temp_filepath = os.path.join(temp_dir, safe_filename)
-        file.save(temp_filepath)
-        print(f"檔案已暫存至：{temp_filepath}")
-        upload_thread = threading.Thread(
-            target=send_file_in_background,
-            args=(temp_filepath,),
-            daemon=True
-        )
-        upload_thread.start()
-        return "檔案上傳程序已在背景啟動", 202
+        sha256 = hashlib.sha256()
+        chunk_size = 1024
+        total_bytes = 0
+
+        # 直接從請求的串流中讀取，而不是存成暫存檔
+        while True:
+            chunk = file.stream.read(chunk_size)
+            total_bytes += len(chunk)
+            if not chunk:
+                break
+            sha256.update(chunk)
+            # 直接透過 ws_to_esp32 傳送
+            ws_to_esp32.send(chunk.decode('utf-8'))
+            time.sleep(0.001)  # 避免傳輸過快
+
+        print("total bytes:", total_bytes)
+        print("SHA256:", sha256.hexdigest())
+
+        time.sleep(0.1)
+        ws_to_esp32.send("end")
+        ws_to_esp32.send(f"cTransmissionOver<{total_bytes}>")
+        time.sleep(0.1)
+
+        # [ 關鍵 ] 在 HTTP 路由中直接等待 ESP32 回覆 'ok'
+        if upload_done_event.wait(timeout=50):
+            upload_done_event.clear()  # 重置
+            print("檔案上傳成功，回傳 200")
+            print(f"上傳花費時間: {time.time() - spend_time} 秒")
+            return "檔案上傳成功", 200
+        else:
+            print("等待 ESP32 回覆逾時，回傳 504")
+            return "等待 ESP32 回覆逾時", 504
+
     except Exception as e:
-        print(f"啟動上傳程序時發生錯誤: {e}")
-        return "檔案上傳啟動失敗", 500
+        print(f"錯誤: {e}")
+        return "檔案上傳失敗", 500
 
 
 # -----------------------------------------------------------------
@@ -326,7 +313,7 @@ if __name__ == "__main__":
     cam_thread.start()
 
     # [ 2. 啟動 ESP32 連線線程 ] (您原本的程式)
-    # threading.Thread(target=ws_connect_to_esp32, daemon=True).start()
+    threading.Thread(target=ws_connect_to_esp32, daemon=True).start()
 
     # [ 3. 啟動 Flask 網頁伺服器 ] (您原本的程式)
     print("伺服器啟動於 http://0.0.0.0:5000")

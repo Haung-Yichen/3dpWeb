@@ -1117,7 +1117,7 @@
             const espMessage = document.getElementById('espMessage');
             espMessage.textContent = "伺服器訊息: " + event.data;
 
-            if (event.data === 'STM32 ok') {
+            if (event.data === 'STM ok') {
                 ws.send('cSetFilename<' + selectedFile.name + '>');
                 document.getElementById('uploadStatus').textContent = 'ESP32 已回覆 STM ok，送出檔名...';
             } else if (event.data === 'Name ok') {
