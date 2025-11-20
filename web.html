@@ -171,6 +171,50 @@
             margin-bottom: 30px;
         }
 
+        @media (max-width: 768px) {
+            .sidebar {
+                display: none;
+            }
+            .main-content {
+                margin-left: 0;
+                padding: 10px;
+            }
+            .dashboard-grid {
+                grid-template-columns: repeat(2, minmax(0, 1fr)); /* 強制兩欄，並允許內容縮小 */
+                gap: 10px;
+            }
+            .card {
+                padding: 12px;
+                min-width: 0; /* 允許 flex/grid 項目縮小 */
+            }
+            .card-header {
+                margin-bottom: 12px;
+            }
+            .card-title {
+                font-size: 0.95rem;
+            }
+            .page-title {
+                font-size: 1.5rem;
+                margin-bottom: 15px;
+            }
+            /* 調整按鈕容器在小螢幕的表現 */
+            .buttons-container {
+                grid-template-columns: 1fr;
+                gap: 6px;
+            }
+            /* 按鈕尺寸縮小 */
+            button {
+                padding: 8px 12px;
+                font-size: 13px;
+                min-height: 36px;
+            }
+            /* 輸入框尺寸縮小 */
+            input[type="number"] {
+                padding: 8px 12px;
+                font-size: 13px;
+            }
+        }
+
         .card {
             background: var(--dark-card);
             border: 1px solid var(--border-color);
@@ -464,16 +508,6 @@
 
             .main-content {
                 margin-left: 0;
-            }
-        }
-
-        @media (max-width: 768px) {
-            .dashboard-grid {
-                grid-template-columns: 1fr;
-            }
-
-            .buttons-container {
-                grid-template-columns: 1fr;
             }
         }
 
@@ -797,21 +831,27 @@
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
                         </svg>
                     </div>
+                    
+                    <!-- 溫度顯示區域 -->
+                    <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
+                        <div style="background: var(--dark-surface); padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">噴嘴溫度</div>
+                            <div id="nozzleTempDisplay" style="font-size: 24px; font-weight: 700; color: var(--accent-color);">-- °C</div>
+                        </div>
+                        <div style="background: var(--dark-surface); padding: 15px; border-radius: 8px; text-align: center;">
+                            <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">熱床溫度</div>
+                            <div id="bedTempDisplay" style="font-size: 24px; font-weight: 700; color: var(--danger-color);">-- °C</div>
+                        </div>
+                    </div>
+                    
+                    <!-- 溫度設定 -->
                     <div class="buttons-container">
                         <input type="number" id="nozzleTempInput" placeholder="噴嘴溫度 (°C)">
                         <button id="setNozzleTempButton" class="btn-primary">設定噴嘴</button>
                     </div>
-                    <div class="buttons-container">
+                    <div class="buttons-container" style="margin-top: 10px;">
                         <input type="number" id="bedTempInput" placeholder="熱床溫度 (°C)">
                         <button id="setBedTempButton" class="btn-primary">設定熱床</button>
-                    </div>
-                    <div class="buttons-container" style="margin-top:15px;">
-                        <button id="getNozzleTempButton" class="btn-primary">請求噴嘴溫度</button>
-                        <span id="nozzleTempDisplay" class="temp-display">-- °C</span>
-                    </div>
-                    <div class="buttons-container" style="margin-top:10px;">
-                        <button id="getBedTempButton" class="btn-primary">請求熱床溫度</button>
-                        <span id="bedTempDisplay" class="temp-display">-- °C</span>
                     </div>
                 </div>
 
@@ -843,17 +883,28 @@
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
                         </svg>
                     </div>
-                    <div class="buttons-container" style="margin-top:10px;">
-                        <button id="getFilamentWeightButton" class="btn-primary">請求耗材重量</button>
-                        <span id="filamentWeightDisplay" class="temp-display">-- g</span>
+                    
+                    <!-- 列印進度 -->
+                    <div style="margin-bottom: 20px;">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                            <span style="font-size: 14px; color: var(--text-secondary);">列印進度</span>
+                            <span id="progressDisplay" style="font-size: 18px; font-weight: 700; color: var(--accent-color);">-- %</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="printProgressBar" class="progress-fill" style="width: 0%"></div>
+                        </div>
                     </div>
-                    <div class="buttons-container" style="margin-top:10px;">
-                        <button id="getRemainingTimeButton" class="btn-primary">請求剩餘時間</button>
-                        <span id="remainingTimeDisplay" class="temp-display">-- min</span>
-                    </div>
-                    <div class="buttons-container" style="margin-top:10px;">
-                        <button id="getProgressButton" class="btn-primary">請求進度</button>
-                        <span id="progressDisplay" class="temp-display">-- %</span>
+                    
+                    <!-- 其他狀態資訊 -->
+                    <div style="display: grid; gap: 12px;">
+                        <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 6px;">
+                            <span style="color: var(--text-secondary);">耗材重量</span>
+                            <span id="filamentWeightDisplay" style="font-weight: 600; color: var(--text-primary);">-- g</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 6px;">
+                            <span style="color: var(--text-secondary);">剩餘時間</span>
+                            <span id="remainingTimeDisplay" style="font-weight: 600; color: var(--text-primary);">-- min</span>
+                        </div>
                     </div>
                 </div>
 
@@ -889,8 +940,20 @@
         document.getElementById('fileInput').addEventListener('change', function (event) {
             const fileNameElement = document.getElementById('fileName');
             if (event.target.files.length > 0) {
-                selectedFile = event.target.files[0];
-                fileNameElement.textContent = '選擇的檔案: ' + selectedFile.name;
+                const file = event.target.files[0];
+                const fileName = file.name.toLowerCase();
+                
+                // 驗證副檔名
+                if (fileName.endsWith('.gcode') || fileName.endsWith('.gco')) {
+                    selectedFile = file;
+                    fileNameElement.textContent = '選擇的檔案: ' + file.name;
+                    fileNameElement.style.color = 'var(--accent-color)';
+                } else {
+                    selectedFile = null;
+                    fileNameElement.textContent = '錯誤：只允許 .gcode 或 .gco 檔案';
+                    fileNameElement.style.color = 'var(--danger-color)';
+                    event.target.value = ''; // 清除檔案選擇
+                }
             } else {
                 selectedFile = null;
                 fileNameElement.textContent = '未選擇檔案';
@@ -901,6 +964,13 @@
         document.getElementById('uploadButton').addEventListener('click', function () {
             if (!selectedFile) {
                 document.getElementById('uploadStatus').textContent = '請先選擇檔案';
+                return;
+            }
+
+            // 再次驗證副檔名
+            const fileName = selectedFile.name.toLowerCase();
+            if (!fileName.endsWith('.gcode') && !fileName.endsWith('.gco')) {
+                document.getElementById('uploadStatus').textContent = '錯誤：只允許上傳 .gcode 或 .gco 檔案';
                 return;
             }
 
@@ -972,7 +1042,6 @@
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send("cSetNozzleTemp<" + temp + ">");
                 document.getElementById('uploadStatus').textContent = "已送出噴嘴溫度設定: " + temp + "°C";
-                document.getElementById('nozzleTempDisplay').textContent = temp + " °C";
             } else {
                 document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出設定";
             }
@@ -988,59 +1057,8 @@
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send("cSetBedTemp<" + temp + ">");
                 document.getElementById('uploadStatus').textContent = "已送出熱床溫度設定: " + temp + "°C";
-                document.getElementById('bedTempDisplay').textContent = temp + " °C";
             } else {
                 document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出設定";
-            }
-        });
-
-        // 請求噴嘴溫度
-        document.getElementById('getNozzleTempButton').addEventListener('click', function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cReqNozzleTemp");
-                document.getElementById('uploadStatus').textContent = "已送出請求噴嘴溫度";
-            } else {
-                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
-            }
-        });
-
-        // 請求熱床溫度
-        document.getElementById('getBedTempButton').addEventListener('click', function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cReqBedTemp");
-                document.getElementById('uploadStatus').textContent = "已送出請求熱床溫度";
-            } else {
-                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
-            }
-        });
-
-        // 請求耗材重量
-        document.getElementById('getFilamentWeightButton').addEventListener('click', function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cReqFilamentWeight");
-                document.getElementById('uploadStatus').textContent = "已送出請求耗材重量";
-            } else {
-                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
-            }
-        });
-
-        // 請求剩餘列印時間
-        document.getElementById('getRemainingTimeButton').addEventListener('click', function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cReqRemainningTime");
-                document.getElementById('uploadStatus').textContent = "已送出請求剩餘列印時間";
-            } else {
-                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
-            }
-        });
-
-        // 請求列印進度
-        document.getElementById('getProgressButton').addEventListener('click', function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cReqProgress");
-                document.getElementById('uploadStatus').textContent = "已送出請求列印進度";
-            } else {
-                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法請求";
             }
         });
 
@@ -1249,7 +1267,13 @@
                 document.getElementById('remainingTimeDisplay').textContent = time + " min";
             } else if (event.data.startsWith("Progress:")) {
                 const progress = event.data.split(":")[1];
+                const progressNum = parseFloat(progress);
                 document.getElementById('progressDisplay').textContent = progress + " %";
+                // 同時更新進度條
+                const progressBar = document.getElementById('printProgressBar');
+                if (progressBar) {
+                    progressBar.style.width = progressNum + '%';
+                }
             }
         };
 

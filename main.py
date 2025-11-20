@@ -225,7 +225,7 @@ def attempt_reconnect_esp32():
             reconnect_attempts += 1
             print(
                 f"嘗試重連 ESP32... ({reconnect_attempts}/{max_reconnect_attempts})")
-        time.sleep(5)
+        time.sleep(1)  # 改為 1 秒，快速重試
         try:
             threading.Thread(target=ws_connect_to_esp32, daemon=True).start()
             break
