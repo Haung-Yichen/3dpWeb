@@ -15,7 +15,7 @@ CORS(app)
 sock = Sock(app)
 
 # --- ESP32 相關 (不變) ---
-esp32_ip = "ws://192.168.1.146:82"
+esp32_ip = "ws://192.168.1.147:82"
 ws_to_esp32 = None
 upload_done_event = threading.Event()
 reconnect_attempts = 0
@@ -23,6 +23,7 @@ max_reconnect_attempts = 5
 is_connected_to_esp32 = False
 reconnect_lock = threading.Lock()
 browser_clients = set()
+is_uploading = False  # [新增] 標記是否正在上傳檔案
 
 # -----------------------------------------------------------------
 # [ 新增：線程安全的攝影機管理類別 ]
@@ -101,6 +102,19 @@ def browser_ws_handler(ws_client):
     global ws_to_esp32, is_connected_to_esp32
     print(f"瀏覽器客戶端已連線: {request.remote_addr}")
     browser_clients.add(ws_client)
+    
+    # [新增] 連線建立時，立即發送目前的 ESP32 連線狀態
+    if is_connected_to_esp32:
+        try:
+            ws_client.send("ESP32_CONNECTED")
+        except Exception as e:
+            print(f"發送初始狀態失敗: {e}")
+    else:
+        try:
+            ws_client.send("ESP32_DISCONNECTED")
+        except Exception as e:
+            print(f"發送初始狀態失敗: {e}")
+
     try:
         while True:
             data = ws_client.receive()
@@ -147,17 +161,40 @@ def ws_connect_to_esp32():
             print("ESP32 顯示檔案上傳成功")
 
     def on_open(ws):
-        global reconnect_attempts, is_connected_to_esp32
+        global reconnect_attempts, is_connected_to_esp32, browser_clients
         print("成功連接到 ESP32")
         with reconnect_lock:
             reconnect_attempts = 0
             is_connected_to_esp32 = True
+        
+        # [新增] 廣播 ESP32 連線成功狀態給所有瀏覽器
+        dead_clients = set()
+        for client in browser_clients:
+            try:
+                client.send("ESP32_CONNECTED")
+            except Exception as e:
+                print(f"廣播 ESP32 連線狀態失敗: {e}")
+                dead_clients.add(client)
+        for client in dead_clients:
+            browser_clients.remove(client)
 
     def on_close(ws, code, msg):
-        global is_connected_to_esp32
+        global is_connected_to_esp32, browser_clients
         print("WebSocket 連線關閉 (ESP32)")
         with reconnect_lock:
             is_connected_to_esp32 = False
+            
+        # [新增] 廣播 ESP32 連線中斷狀態給所有瀏覽器
+        dead_clients = set()
+        for client in browser_clients:
+            try:
+                client.send("ESP32_DISCONNECTED")
+            except Exception as e:
+                print(f"廣播 ESP32 斷線狀態失敗: {e}")
+                dead_clients.add(client)
+        for client in dead_clients:
+            browser_clients.remove(client)
+
         threading.Thread(target=attempt_reconnect_esp32, daemon=True).start()
 
     def on_error(ws, err):
@@ -244,7 +281,7 @@ def index():
 @app.route("/upload", methods=["POST"])
 def upload_file():
     # 使用 main.py 的全域變數
-    global upload_done_event, is_connected_to_esp32, ws_to_esp32
+    global upload_done_event, is_connected_to_esp32, ws_to_esp32, is_uploading
     spend_time = time.time()
 
     # 檢查連接狀態
@@ -261,9 +298,12 @@ def upload_file():
     print(f"收到檔案上傳請求: {file.filename}")
     time.sleep(0.01)
 
+    # [新增] 標記開始上傳
+    is_uploading = True
+
     try:
         sha256 = hashlib.sha256()
-        chunk_size = 1024
+        chunk_size = 2048
         total_bytes = 0
 
         # 直接從請求的串流中讀取，而不是存成暫存檔
@@ -274,7 +314,7 @@ def upload_file():
                 break
             sha256.update(chunk)
             # 直接透過 ws_to_esp32 傳送
-            ws_to_esp32.send(chunk.decode('utf-8'))
+            ws_to_esp32.send(chunk)
             time.sleep(0.001)  # 避免傳輸過快
 
         print("total bytes:", total_bytes)
@@ -282,7 +322,7 @@ def upload_file():
 
         time.sleep(0.1)
         ws_to_esp32.send("end")
-        ws_to_esp32.send(f"cTransmissionOver<{total_bytes}>")
+        ws_to_esp32.send(f"cTransmissionOver<{sha256.hexdigest()}>")
         time.sleep(0.1)
 
         # [ 關鍵 ] 在 HTTP 路由中直接等待 ESP32 回覆 'ok'
@@ -298,11 +338,40 @@ def upload_file():
     except Exception as e:
         print(f"錯誤: {e}")
         return "檔案上傳失敗", 500
+    finally:
+        # [新增] 無論成功或失敗，結束時標記上傳結束
+        is_uploading = False
 
 
 # -----------------------------------------------------------------
 # [ 修改：伺服器啟動 ]
 # -----------------------------------------------------------------
+
+def poll_esp32_status():
+    """
+    背景線程：若已連線到 ESP32，每 5 秒輪詢一次狀態 (溫度、重量、進度等)。
+    """
+    global ws_to_esp32, is_connected_to_esp32, is_uploading
+    print("啟動 ESP32 狀態輪詢線程...")
+    while True:
+        # [修改] 增加檢查 is_uploading，若正在上傳則暫停輪詢
+        if is_connected_to_esp32 and ws_to_esp32 and not is_uploading:
+            try:
+                # 依序發送請求指令
+                ws_to_esp32.send("cReqNozzleTemp")
+                time.sleep(0.1)
+                ws_to_esp32.send("cReqBedTemp")
+                time.sleep(0.1)
+                ws_to_esp32.send("cReqFilamentWeight")
+                time.sleep(0.1)
+                ws_to_esp32.send("cReqRemainningTime")
+                time.sleep(0.1)
+                ws_to_esp32.send("cReqProgress")
+            except Exception as e:
+                print(f"輪詢 ESP32 狀態失敗: {e}")
+        
+        # 每 5 秒執行一次
+        time.sleep(5)
 
 # 建立一個全域的攝影機線程實例
 cam_thread = CameraThread()
@@ -314,6 +383,9 @@ if __name__ == "__main__":
 
     # [ 2. 啟動 ESP32 連線線程 ] (您原本的程式)
     threading.Thread(target=ws_connect_to_esp32, daemon=True).start()
+
+    # [ 新增：啟動狀態輪詢線程 ]
+    threading.Thread(target=poll_esp32_status, daemon=True).start()
 
     # [ 3. 啟動 Flask 網頁伺服器 ] (您原本的程式)
     print("伺服器啟動於 http://0.0.0.0:5000")

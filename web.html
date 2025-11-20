@@ -300,17 +300,43 @@
             box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
         }
 
-        /* 狀態顯示 */
-        .status-display {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            padding: 8px 12px;
-            background: var(--dark-surface);
-            border-radius: 6px;
-            font-size: 14px;
-            font-weight: 500;
+        /* 轉圈圈動畫 */
+        .spinner {
+            border: 4px solid rgba(255, 255, 255, 0.1);
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border-left-color: var(--accent-color);
+            animation: spin 1s linear infinite;
+            display: inline-block;
+            vertical-align: middle;
+            margin-right: 8px;
         }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* 上傳進度容器 */
+        #uploadProgressContainer {
+            display: none;
+            margin-top: 15px;
+        }
+
+        .progress-label {
+            display: flex;
+            justify-content: space-between;
+            font-size: 12px;
+            color: var(--text-secondary);
+            margin-bottom: 5px;
+        }
+
 
         .status-value {
             color: var(--accent-color);
@@ -749,6 +775,17 @@
                     </div>
                     <input type="file" id="fileInput" />
                     <div id="fileName">未選擇檔案</div>
+                    
+                    <!-- 上傳進度顯示 -->
+                    <div id="uploadProgressContainer">
+                        <div class="progress-label">
+                            <span id="uploadStatusText"><div class="spinner"></div>正在上傳...</span>
+                            <span id="uploadPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="uploadProgressBar" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- 溫度監控 -->
@@ -1105,14 +1142,31 @@
             document.getElementById('connectionDot').classList.add('connected');
 
             // 同時更新「系統狀態」卡片中的文字
-            const monitorStatus = document.querySelector('#monitorWindow #connectionStatus');
+            const monitorStatus = document.getElementById('monitorConnectionStatus');
             if (monitorStatus) {
-                monitorStatus.textContent = "已連線到伺服器";
+                monitorStatus.textContent = "已連線到伺服器，正在檢查 ESP32...";
             }
         };
 
         ws.onmessage = function (event) {
             console.log("收到訊息:", event.data);
+
+            // [新增] 處理 ESP32 連線狀態訊息
+            if (event.data === 'ESP32_CONNECTED') {
+                const monitorStatus = document.getElementById('monitorConnectionStatus');
+                if (monitorStatus) {
+                    monitorStatus.textContent = "已連線到 ESP32";
+                    monitorStatus.style.color = "var(--accent-color)";
+                }
+                return;
+            } else if (event.data === 'ESP32_DISCONNECTED') {
+                const monitorStatus = document.getElementById('monitorConnectionStatus');
+                if (monitorStatus) {
+                    monitorStatus.textContent = "ESP32 未連線";
+                    monitorStatus.style.color = "var(--danger-color)";
+                }
+                return;
+            }
 
             const espMessage = document.getElementById('espMessage');
             espMessage.textContent = "伺服器訊息: " + event.data;
@@ -1122,22 +1176,65 @@
                 document.getElementById('uploadStatus').textContent = 'ESP32 已回覆 STM ok，送出檔名...';
             } else if (event.data === 'Name ok') {
                 document.getElementById('uploadStatus').textContent = 'ESP32 已確認檔名，開始上傳檔案...';
+                
+                // 顯示進度條與轉圈圈
+                const progressContainer = document.getElementById('uploadProgressContainer');
+                const progressBar = document.getElementById('uploadProgressBar');
+                const uploadPercent = document.getElementById('uploadPercent');
+                const uploadStatusText = document.getElementById('uploadStatusText');
+                
+                progressContainer.style.display = 'block';
+                progressBar.style.width = '0%';
+                uploadPercent.textContent = '0%';
+                uploadStatusText.innerHTML = '<div class="spinner"></div>正在上傳...';
+
                 const formData = new FormData();
                 formData.append('file', selectedFile);
 
-                fetch('http://192.168.1.160:5000/upload', {
-                    method: 'POST',
-                    body: formData
-                })
-                    .then(response => response.text())
-                    .then(data => {
-                        console.log('伺服器回應:', data);
+                // 使用 XMLHttpRequest 以監聽上傳進度
+                const xhr = new XMLHttpRequest();
+                xhr.open('POST', 'http://192.168.1.160:5000/upload', true);
+
+                // 監聽上傳進度
+                xhr.upload.onprogress = function(e) {
+                    if (e.lengthComputable) {
+                        const percentComplete = Math.round((e.loaded / e.total) * 100);
+                        progressBar.style.width = percentComplete + '%';
+                        uploadPercent.textContent = percentComplete + '%';
+                        
+                        if (percentComplete === 100) {
+                            uploadStatusText.innerHTML = '<div class="spinner"></div>伺服器處理中...';
+                        }
+                    }
+                };
+
+                xhr.onload = function() {
+                    if (xhr.status === 200) {
+                        console.log('伺服器回應:', xhr.responseText);
                         document.getElementById('uploadStatus').textContent = '檔案上傳成功 可以開始列印';
-                    })
-                    .catch(error => {
-                        console.error('上傳失敗:', error);
-                        document.getElementById('uploadStatus').textContent = '檔案上傳失敗';
-                    });
+                        uploadStatusText.innerHTML = '上傳完成';
+                        progressBar.style.width = '100%';
+                        uploadPercent.textContent = '100%';
+                        // 延遲後隱藏進度條 (可選)
+                        setTimeout(() => {
+                            progressContainer.style.display = 'none';
+                        }, 3000);
+                    } else {
+                        console.error('上傳失敗:', xhr.statusText);
+                        document.getElementById('uploadStatus').textContent = '檔案上傳失敗: ' + xhr.status;
+                        uploadStatusText.innerHTML = '上傳失敗';
+                        uploadStatusText.style.color = 'var(--danger-color)';
+                    }
+                };
+
+                xhr.onerror = function() {
+                    console.error('上傳發生錯誤');
+                    document.getElementById('uploadStatus').textContent = '檔案上傳發生網路錯誤';
+                    uploadStatusText.innerHTML = '網路錯誤';
+                    uploadStatusText.style.color = 'var(--danger-color)';
+                };
+
+                xhr.send(formData);
             } else if (event.data.startsWith("NozzleTemp:")) {
                 const temp = event.data.split(":")[1];
                 document.getElementById('nozzleTempDisplay').textContent = temp + " °C";
@@ -1161,9 +1258,10 @@
             document.getElementById('connectionStatus').textContent = "連線中斷";
             document.getElementById('connectionDot').classList.remove('connected');
 
-            const monitorStatus = document.querySelector('#monitorWindow #connectionStatus');
+            const monitorStatus = document.getElementById('monitorConnectionStatus');
             if (monitorStatus) {
                 monitorStatus.textContent = "連線中斷，嘗試重連...";
+                monitorStatus.style.color = "var(--warning-color)";
             }
             const espMessage = document.getElementById('espMessage');
             espMessage.textContent = "連線中斷";
