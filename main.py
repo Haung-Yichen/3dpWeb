@@ -4,7 +4,7 @@
 支援檔案上傳、即時狀態監控、視訊串流
 """
 
-from flask import Flask, request, send_from_directory, Response
+from flask import Flask, request, send_from_directory, Response, jsonify
 from flask_cors import CORS
 from flask_sock import Sock
 import websocket
@@ -137,11 +137,22 @@ class ESP32Connection:
             self.reconnect_attempts = 0
             self.is_connected = True
         
+        # 通知 STM32 參數輪詢由後端負責
+        time.sleep(0.1)
+        self.send("cClintStatus<1>")
         self.broadcast_to_browsers("ESP32_CONNECTED")
 
     def on_close(self, ws, code, msg):
         """ESP32 連線關閉"""
         print("WebSocket 連線關閉 (ESP32)")
+        
+        # 嘗試通知 STM32 需要自行輪詢（如果連線還可用）
+        try:
+            if self.ws:
+                self.ws.send("cClintStatus<0>")
+        except:
+            pass
+        
         with self.lock:
             self.is_connected = False
         
@@ -349,6 +360,67 @@ def upload_file():
         return "檔案上傳失敗", 500
     finally:
         esp32.is_uploading = False
+
+
+@app.route("/update_esp32_ip", methods=["POST"])
+def update_esp32_ip():
+    """更新 ESP32 IP 位址"""
+    try:
+        data = request.get_json()
+        new_ip = data.get("ip", "").strip()
+        
+        if not new_ip:
+            return {"success": False, "error": "IP 位址不能為空"}, 400
+        
+        if not new_ip.startswith("ws://"):
+            return {"success": False, "error": "IP 格式錯誤，必須以 ws:// 開頭"}, 400
+        
+        # 更新配置
+        Config.ESP32_IP = new_ip
+        print(f"ESP32 IP 已更新為: {new_ip}")
+        
+        # 斷開現有連線並重新連接
+        if esp32.ws:
+            try:
+                esp32.ws.close()
+            except:
+                pass
+        
+        # 重新連接到新的 IP
+        threading.Thread(target=esp32.connect, daemon=True).start()
+        
+        return {"success": True, "ip": new_ip}, 200
+        
+    except Exception as e:
+        print(f"更新 ESP32 IP 錯誤: {e}")
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route("/get_server_ip", methods=["GET"])
+def get_server_ip():
+    """獲取伺服器 IP 位址"""
+    try:
+        import socket
+        
+        # 獲取本地 IP
+        s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+        try:
+            # 這個不會實際發送封包，只是用來獲取本地 IP
+            s.connect(('10.255.255.255', 1))
+            ip = s.getsockname()[0]
+        except Exception:
+            ip = '127.0.0.1'
+        finally:
+            s.close()
+        
+        # 返回完整的 URL
+        server_url = f"http://{ip}:5000"
+        
+        return jsonify({"success": True, "ip": ip, "url": server_url})
+        
+    except Exception as e:
+        print(f"獲取伺服器 IP 錯誤: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 # =============================================================================

@@ -49,6 +49,13 @@
             height: 100vh;
             overflow-y: auto;
             z-index: 1000;
+            transition: transform 0.3s ease;
+            left: 0;
+            transform: translateX(0); /* 桌面版預設顯示 */
+        }
+        
+        .sidebar.collapsed {
+            transform: translateX(-100%); /* 桌面版收起 */
         }
 
         .sidebar-header {
@@ -111,11 +118,152 @@
             opacity: 0.7;
         }
 
+        /* 設定視窗遮罩 */
+        .settings-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.7);
+            display: none;
+            justify-content: center;
+            align-items: center;
+            z-index: 3000;
+        }
+
+        .settings-overlay.show {
+            display: flex;
+        }
+
+        /* 設定視窗 */
+        .settings-modal {
+            background: var(--dark-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 30px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .settings-modal h3 {
+            color: var(--text-primary);
+            margin-bottom: 20px;
+            font-size: 1.5rem;
+        }
+
+        .ip-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .ip-input-container span {
+            color: var(--text-primary);
+            font-size: 1.2rem;
+            font-weight: 600;
+        }
+
+        .ip-input-container input[type="number"] {
+            width: 70px;
+            padding: 10px;
+            font-size: 1rem;
+            text-align: center;
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            background: var(--dark-surface);
+            color: #10b981;
+            font-weight: 600;
+        }
+
+        .ip-input-container input[type="number"]:focus {
+            border-color: var(--secondary-color);
+            outline: none;
+        }
+
+        .settings-buttons {
+            display: flex;
+            gap: 10px;
+            justify-content: flex-end;
+        }
+
+        .settings-buttons button {
+            padding: 10px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+        }
+
         /* 主內容區 */
         .main-content {
             flex: 1;
             margin-left: 280px;
             padding: 20px;
+            transition: margin-left 0.3s ease;
+        }
+
+        .main-content.expanded {
+            margin-left: 0;
+        }
+
+        /* 側邊欄切換按鈕 */
+        .sidebar-toggle {
+            position: fixed;
+            top: 20px;
+            left: 20px; /* 預設位置（側邊欄收起時） */
+            z-index: 2001;
+            background: var(--dark-surface);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 10px;
+            cursor: pointer;
+            transition: left 0.3s ease, background 0.2s ease; /* 添加平滑過渡 */
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            width: 40px;
+            height: 40px;
+        }
+
+        .sidebar-toggle:hover {
+            background: var(--dark-card);
+            border-color: var(--secondary-color);
+        }
+
+        /* 桌面版：側邊欄展開時，按鈕移到側邊欄右側 */
+        .sidebar-toggle:not(.collapsed) {
+            left: 300px;
+        }
+
+        /* 桌面版：側邊欄收起時，按鈕在左側 */
+        .sidebar-toggle.collapsed {
+            left: 20px;
+        }
+
+        .sidebar-toggle svg {
+            width: 20px;
+            height: 20px;
+            color: var(--text-primary);
+        }
+
+        /* 側邊欄背景遮罩 (手機版) */
+        .sidebar-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 1999;
+        }
+
+        .sidebar-overlay.show {
+            display: block;
         }
 
         .header {
@@ -173,14 +321,24 @@
 
         @media (max-width: 768px) {
             .sidebar {
-                display: none;
+                transform: translateX(-100%); /* 手機版預設隱藏 */
+                z-index: 2000;
             }
+            
+            .sidebar.open {
+                transform: translateX(0); /* 手機版展開 */
+            }
+            
+            .sidebar.collapsed {
+                transform: translateX(-100%); /* 手機版收起 */
+            }
+            
             .main-content {
                 margin-left: 0;
                 padding: 10px;
             }
             .dashboard-grid {
-                grid-template-columns: repeat(2, minmax(0, 1fr)); /* 強制兩欄，並允許內容縮小 */
+                grid-template-columns: 1fr; /* 改為單欄佈局 */
                 gap: 10px;
             }
             .card {
@@ -197,21 +355,29 @@
                 font-size: 1.5rem;
                 margin-bottom: 15px;
             }
-            /* 調整按鈕容器在小螢幕的表現 */
+            /* 調整按鈕容器在小螢幕的表現 - 保持按鈕並排顯示 */
             .buttons-container {
-                grid-template-columns: 1fr;
+                display: flex;
+                flex-wrap: wrap;
                 gap: 6px;
+            }
+            .buttons-container button {
+                flex: 0 1 calc(50% - 6px); /* 讓按鈕平均分配並保持並排 */
+                min-width: 140px;
+            }
+            .buttons-container input[type="number"] {
+                flex: 1 1 100%; /* 輸入欄位單獨占一列較易閱讀 */
             }
             /* 按鈕尺寸縮小 */
             button {
-                padding: 8px 12px;
-                font-size: 13px;
+                padding: 8px 10px;
+                font-size: 12px;
                 min-height: 36px;
             }
             /* 輸入框尺寸縮小 */
             input[type="number"] {
-                padding: 8px 12px;
-                font-size: 13px;
+                padding: 8px 10px;
+                font-size: 12px;
             }
         }
 
@@ -252,6 +418,29 @@
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
             gap: 12px;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard-grid {
+                grid-template-columns: 1fr;
+                gap: 10px;
+            }
+
+            .buttons-container {
+                display: flex;
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .buttons-container button {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 140px;
+            }
+
+            .buttons-container input[type="number"] {
+                flex: 1 1 calc(50% - 8px);
+                min-width: 140px;
+            }
         }
 
         button {
@@ -333,7 +522,7 @@
             border-radius: 8px;
             font-size: 14px;
             background: var(--dark-surface);
-            color: var(--text-primary);
+            color: #000000;
             transition: all 0.2s ease;
             outline: none;
             width: 100%;
@@ -497,17 +686,13 @@
 
         /* 響應式設計 */
         @media (max-width: 1024px) {
-            .sidebar {
-                transform: translateX(-100%);
-                transition: transform 0.3s ease;
+            .sidebar-toggle {
+                display: flex;
+                left: 20px !important; /* 手機版預設位置 */
             }
 
-            .sidebar.open {
-                transform: translateX(0);
-            }
-
-            .main-content {
-                margin-left: 0;
+            .sidebar-toggle.sidebar-open {
+                left: 300px !important; /* 手機版側邊欄打開時 */
             }
         }
 
@@ -703,6 +888,9 @@
 </head>
 
 <body>
+    <!-- 側邊欄背景遮罩 (手機版) -->
+    <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
+    
     <div class="app-container">
         <!-- 側邊欄 -->
         <div class="sidebar">
@@ -713,14 +901,21 @@
 
             <div class="nav-section">
                 <div class="nav-title">主要功能</div>
-                <a href="#" class="nav-item active">
+                <a href="#temperature" class="nav-item" onclick="scrollToSection('temperature')">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
                     </svg>
-                    儀表板
+                    溫度監控
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#print-status" class="nav-item" onclick="scrollToSection('print-status')">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd"
+                            d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
+                    </svg>
+                    列印狀態
+                </a>
+                <a href="#print-control" class="nav-item" onclick="scrollToSection('print-control')">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
                         <path fill-rule="evenodd"
@@ -728,14 +923,7 @@
                     </svg>
                     列印控制
                 </a>
-                <a href="#" class="nav-item">
-                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
-                        <path
-                            d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z" />
-                    </svg>
-                    溫度監控
-                </a>
-                <a href="#" class="nav-item">
+                <a href="#video" class="nav-item" onclick="scrollToSection('video')">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
                             d="M4 3a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V5a2 2 0 00-2-2H4zm12 12H4l4-8 3 6 2-4 3 6z" />
@@ -746,14 +934,20 @@
 
             <div class="nav-section">
                 <div class="nav-title">系統</div>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" onclick="showSettings(); return false;">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
                             d="M11.3 1.046A1 1 0 0112 2v5h4a1 1 0 01.82 1.573l-7 10A1 1 0 018 18v-5H4a1 1 0 01-.82-1.573l7-10a1 1 0 011.12-.38z" />
                     </svg>
                     設定
                 </a>
-                <a href="#" class="nav-item">
+                <a href="#" class="nav-item" onclick="showQRCode(); return false;">
+                    <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
+                        <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+                    </svg>
+                    連結
+                </a>
+                <a href="#" class="nav-item" onclick="showAbout(); return false;">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
                         <path fill-rule="evenodd"
                             d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" />
@@ -763,67 +957,34 @@
             </div>
         </div>
 
+        <!-- 切換側邊欄按鈕 -->
+        <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+            <svg fill="currentColor" viewBox="0 0 20 20">
+                <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+            </svg>
+        </button>
+
         <!-- 主內容區 -->
-        <div class="main-content">
+        <div class="main-content" id="mainContent">
             <!-- 頁面標題 -->
             <div class="header">
-                <h1 class="page-title">儀表板</h1>
-                <div class="status-indicator">
-                    <div class="status-dot" id="connectionDot"></div>
-                    <span id="connectionStatus">連線中...</span>
+                <h1 class="page-title">印表機控制</h1>
+                <div style="display: flex; flex-direction: column; gap: 8px;">
+                    <div class="status-indicator">
+                        <div class="status-dot" id="connectionDot"></div>
+                        <span id="connectionStatus">連線中...</span>
+                    </div>
+                    <div class="status-indicator">
+                        <div class="status-dot" id="esp32Dot"></div>
+                        <span id="esp32Status">ESP32 連線中...</span>
+                    </div>
                 </div>
             </div>
 
             <!-- 儀表板網格 -->
             <div class="dashboard-grid">
-                <!-- 列印控制 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">列印控制</h3>
-                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
-                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
-                        </svg>
-                    </div>
-                    <div class="buttons-container">
-                        <button id="startPrintButton" class="btn-success">開始列印</button>
-                        <button id="pausePrintButton" class="btn-warning">暫停列印</button>
-                        <button id="cstopPrintingButton" class="btn-danger">停止列印</button>
-                        <button id="homeButton" class="btn-primary">回原點</button>
-                        <button id="emergencyStopButton" class="btn-danger"
-                            style="background: #dc2626; border-color: #dc2626; font-weight: 700;">緊急停止</button>
-                    </div>
-                </div>
-
-                <!-- 檔案管理 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">檔案管理</h3>
-                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
-                            <path fill-rule="evenodd"
-                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
-                        </svg>
-                    </div>
-                    <div class="buttons-container">
-                        <button id="actionButton" class="btn-primary">選擇檔案</button>
-                        <button id="uploadButton" class="btn-success">上傳檔案</button>
-                    </div>
-                    <input type="file" id="fileInput" />
-                    <div id="fileName">未選擇檔案</div>
-                    
-                    <!-- 上傳進度顯示 -->
-                    <div id="uploadProgressContainer">
-                        <div class="progress-label">
-                            <span id="uploadStatusText"><div class="spinner"></div>正在上傳...</span>
-                            <span id="uploadPercent">0%</span>
-                        </div>
-                        <div class="progress-bar">
-                            <div id="uploadProgressBar" class="progress-fill" style="width: 0%"></div>
-                        </div>
-                    </div>
-                </div>
-
                 <!-- 溫度監控 -->
-                <div class="card">
+                <div class="card" id="temperature">
                     <div class="card-header">
                         <h3 class="card-title">溫度監控</h3>
                         <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -846,7 +1007,7 @@
                     
                     <!-- 溫度設定 -->
                     <div class="buttons-container">
-                        <input type="number" id="nozzleTempInput" placeholder="噴嘴溫度 (°C)">
+                        <input type="number" id="nozzleTempInput" placeholder="噴嘴溫度 (°C)" value="200">
                         <button id="setNozzleTempButton" class="btn-primary">設定噴嘴</button>
                     </div>
                     <div class="buttons-container" style="margin-top: 10px;">
@@ -855,27 +1016,8 @@
                     </div>
                 </div>
 
-                <!-- 視訊監控 -->
-                <div class="card">
-                    <div class="card-header">
-                        <h3 class="card-title">視訊監控</h3>
-                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
-                            <path
-                                d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
-                        </svg>
-                    </div>
-                    <div class="camera-container">
-                        <img id="cameraStream" src="" alt="ESP32-CAM 視訊串流" style="display: none;">
-                        <div id="cameraStatus">鏡頭未開啟</div>
-                    </div>
-                    <div class="buttons-container">
-                        <button id="startCameraButton" class="btn-success">開啟鏡頭</button>
-                        <button id="stopCameraButton" class="btn-danger">關閉鏡頭</button>
-                    </div>
-                </div>
-
                 <!-- 列印狀態 -->
-                <div class="card">
+                <div class="card" id="print-status">
                     <div class="card-header">
                         <h3 class="card-title">列印狀態</h3>
                         <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
@@ -908,6 +1050,71 @@
                     </div>
                 </div>
 
+                <!-- 列印控制 -->
+                <div class="card" id="print-control">
+                    <div class="card-header">
+                        <h3 class="card-title">列印控制</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path d="M9 2a1 1 0 000 2h2a1 1 0 100-2H9z" />
+                        </svg>
+                    </div>
+                    <div class="buttons-container">
+                        <button id="startPrintButton" class="btn-success">開始列印</button>
+                        <button id="pausePrintButton" class="btn-warning">暫停列印</button>
+                        <button id="cstopPrintingButton" class="btn-danger">停止列印</button>
+                        <button id="homeButton" class="btn-primary">回原點</button>
+                        <button id="emergencyStopButton" class="btn-danger"
+                            style="background: #dc2626; border-color: #dc2626; font-weight: 700;">緊急停止</button>
+                    </div>
+                </div>
+
+                <!-- 檔案管理 -->
+                <div class="card">
+                    <div class="card-header">
+                        <h3 class="card-title">檔案管理</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path fill-rule="evenodd"
+                                d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" />
+                        </svg>
+                    </div>
+                    <div class="buttons-container">
+                        <button id="actionButton" class="btn-primary">選擇檔案</button>
+                        <button id="uploadButton" class="btn-success">上傳檔案</button>
+                    </div>
+                    <input type="file" id="fileInput" accept=".gcode,.gco" />
+                    <div id="fileName">未選擇檔案</div>
+                    
+                    <!-- 上傳進度顯示 -->
+                    <div id="uploadProgressContainer">
+                        <div class="progress-label">
+                            <span id="uploadStatusText"><div class="spinner"></div>正在上傳...</span>
+                            <span id="uploadPercent">0%</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="uploadProgressBar" class="progress-fill" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 視訊監控 -->
+                <div class="card" id="video">
+                    <div class="card-header">
+                        <h3 class="card-title">視訊監控</h3>
+                        <svg class="card-icon" fill="currentColor" viewBox="0 0 20 20">
+                            <path
+                                d="M2 6a2 2 0 012-2h6a2 2 0 012 2v8a2 2 0 01-2 2H4a2 2 0 01-2-2V6zM14.553 7.106A1 1 0 0014 8v4a1 1 0 00.553.894l2 1A1 1 0 0018 13V7a1 1 0 00-1.447-.894l-2 1z" />
+                        </svg>
+                    </div>
+                    <div class="camera-container">
+                        <img id="cameraStream" src="" alt="ESP32-CAM 視訊串流" style="display: none;">
+                        <div id="cameraStatus">鏡頭未開啟</div>
+                    </div>
+                    <div class="buttons-container">
+                        <button id="startCameraButton" class="btn-success">開啟鏡頭</button>
+                        <button id="stopCameraButton" class="btn-danger">關閉鏡頭</button>
+                    </div>
+                </div>
+
                 <!-- 系統狀態 -->
                 <div class="card">
                     <div class="card-header">
@@ -932,9 +1139,335 @@
         let cameraStream = null;
         let isCameraOn = false;
 
+        // 切換側邊欄
+        function toggleSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            if (window.innerWidth > 768) {
+                // 桌面版逻輯：使用 collapsed 類別
+                const isCollapsed = sidebar.classList.contains('collapsed');
+                
+                if (isCollapsed) {
+                    // 展開
+                    sidebar.classList.remove('collapsed');
+                    toggleBtn.classList.remove('collapsed');
+                    mainContent.classList.remove('expanded');
+                } else {
+                    // 收起
+                    sidebar.classList.add('collapsed');
+                    toggleBtn.classList.add('collapsed');
+                    mainContent.classList.add('expanded');
+                }
+            } else {
+                // 手機版逻輯：使用 open 類別
+                const isOpen = sidebar.classList.contains('open');
+                
+                if (isOpen) {
+                    // 關閉
+                    sidebar.classList.remove('open');
+                    toggleBtn.classList.remove('sidebar-open');
+                    if (overlay) overlay.classList.remove('show');
+                } else {
+                    // 打開
+                    sidebar.classList.add('open');
+                    toggleBtn.classList.add('sidebar-open');
+                    if (overlay) overlay.classList.add('show');
+                }
+            }
+        }
+        
+        // 關閉側邊欄
+        function closeSidebar() {
+            const sidebar = document.querySelector('.sidebar');
+            const toggleBtn = document.getElementById('sidebarToggle');
+            const overlay = document.getElementById('sidebarOverlay');
+            
+            sidebar.classList.remove('open');
+            toggleBtn.classList.remove('sidebar-open');
+            if (overlay) overlay.classList.remove('show');
+        }
+        
+        // 點擊導航項目後自動關閉側邊欄 (手機版)
+        function scrollToSection(sectionId) {
+            const element = document.getElementById(sectionId);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+            // 手機版自動關閉側邊欄
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+            return false;
+        }
+
+        // 顯示關於資訊
+        function showAbout() {
+            // 手機版先關閉側邊欄
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+            
+            const aboutText = `
+🔧 3D 印表機網頁控制系統
+
+【功能簡介】
+
+• 即時監控：
+  - 噴嘴與熱床溫度即時顯示
+  - 列印進度追蹤
+  - 耗材重量與剩餘時間顯示
+
+• 遠端控制：
+  - 上傳 G-code 檔案
+  - 開始/暫停/停止列印
+  - 溫度設定
+  - 緊急停止功能
+
+• 視訊監控：
+  - USB 攝影機即時串流
+  - 遠端監控列印狀況
+
+【系統架構】
+瀏覽器 ↔ Flask 後端 ↔ ESP32 ↔ STM32 ↔ 3D 印表機
+
+【技術報點】
+- 前端：HTML/CSS/JavaScript
+- 後端：Python Flask + WebSocket
+- 硬體：ESP32 + STM32
+- 通訊：WebSocket 即時雙向傳輸
+            `.trim();
+            alert(aboutText);
+        }
+
+        // 顯示 QR Code
+        function showQRCode() {
+            // 手機版先關閉側邊欄
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+            
+            // 建立遮罩層
+            const overlay = document.createElement('div');
+            overlay.className = 'settings-overlay show';
+            overlay.id = 'qrcodeOverlay';
+            
+            // 建立 QR Code 視窗
+            overlay.innerHTML = `
+                <div class="settings-modal" style="text-align: center;">
+                    <h3>🔗 掃描 QR Code 連線</h3>
+                    <div id="qrcodeContainer" style="margin: 20px auto; display: flex; justify-content: center; align-items: center; background: white; padding: 20px; border-radius: 8px; min-height: 296px;">
+                        <div style="color: #666;">正在獲取伺服器 IP...</div>
+                    </div>
+                    <div id="serverURL" style="color: var(--text-secondary); font-size: 0.9rem; margin-bottom: 15px; word-break: break-all;">
+                    </div>
+                    <div class="settings-buttons" style="justify-content: center;">
+                        <button class="btn-primary" onclick="closeQRCode()">關閉</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // 從後端獲取伺服器 IP
+            fetch('/get_server_ip')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        const serverURL = data.url;
+                        document.getElementById('serverURL').textContent = serverURL;
+                        
+                        const container = document.getElementById('qrcodeContainer');
+                        if (container) {
+                            const qrImage = document.createElement('img');
+                            qrImage.style.width = '256px';
+                            qrImage.style.height = '256px';
+                            qrImage.style.display = 'block';
+                            
+                            // 使用 api.qrserver.com
+                            qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(serverURL)}`;
+                            
+                            qrImage.onerror = function() {
+                                // 如果失敗，顯示可複製的連結
+                                container.innerHTML = `
+                                    <div style="padding: 20px; color: #333; text-align: center;">
+                                        <p style="margin-bottom: 15px; font-weight: 600; font-size: 1.1rem;">無法生成 QR Code</p>
+                                        <p style="font-size: 0.9rem; margin-bottom: 10px;">請複製以下網址分享：</p>
+                                        <input type="text" value="${serverURL}" readonly 
+                                            style="width: 100%; padding: 12px; margin-top: 10px; border: 2px solid #ddd; border-radius: 6px; color: #000; font-size: 0.9rem;"
+                                            onclick="this.select(); document.execCommand('copy'); alert('✅ 已複製到剪貼簿');" />
+                                    </div>
+                                `;
+                            };
+                            
+                            container.innerHTML = '';
+                            container.appendChild(qrImage);
+                        }
+                    } else {
+                        document.getElementById('qrcodeContainer').innerHTML = `
+                            <p style="color: #ef4444;">無法獲取伺服器 IP</p>
+                        `;
+                    }
+                })
+                .catch(error => {
+                    document.getElementById('qrcodeContainer').innerHTML = `
+                        <p style="color: #ef4444;">錯誤: ${error.message}</p>
+                    `;
+                });
+            
+            // 點擊遮罩層關閉
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    closeQRCode();
+                }
+            });
+        }
+
+        // 關閉 QR Code 視窗
+        function closeQRCode() {
+            const overlay = document.getElementById('qrcodeOverlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // 顯示設定視窗
+        function showSettings() {
+            // 手機版先關閉側邊欄
+            if (window.innerWidth <= 768) {
+                closeSidebar();
+            }
+            
+            // 建立遮罩層
+            const overlay = document.createElement('div');
+            overlay.className = 'settings-overlay show';
+            overlay.id = 'settingsOverlay';
+            
+            // 建立設定視窗
+            overlay.innerHTML = `
+                <div class="settings-modal">
+                    <h3>⚡ ESP32 IP 設定</h3>
+                    <div class="ip-input-container">
+                        <span>ws://192.168.</span>
+                        <input type="number" id="ip3" min="0" max="255" value="1" />
+                        <span>.</span>
+                        <input type="number" id="ip4" min="0" max="255" value="147" />
+                        <span>:</span>
+                        <input type="number" id="port" min="1" max="65535" value="82" />
+                    </div>
+                    <div class="settings-buttons">
+                        <button class="btn-primary" onclick="saveESP32IP()">確定</button>
+                        <button class="btn-danger" onclick="closeSettings()">取消</button>
+                    </div>
+                </div>
+            `;
+            
+            document.body.appendChild(overlay);
+            
+            // 點擊遮罩層關閉
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    closeSettings();
+                }
+            });
+        }
+
+        // 關閉設定視窗
+        function closeSettings() {
+            const overlay = document.getElementById('settingsOverlay');
+            if (overlay) {
+                overlay.remove();
+            }
+        }
+
+        // 儲存 ESP32 IP
+        function saveESP32IP() {
+            const ip3 = document.getElementById('ip3').value;
+            const ip4 = document.getElementById('ip4').value;
+            const port = document.getElementById('port').value;
+            
+            // 驗證輸入
+            if (ip3 < 0 || ip3 > 255 || ip4 < 0 || ip4 > 255) {
+                alert('❌ IP 位址範圍必須在 0-255 之間');
+                return;
+            }
+            
+            if (port < 1 || port > 65535) {
+                alert('❌ 埠號範圍必須在 1-65535 之間');
+                return;
+            }
+            
+            const newIP = `ws://192.168.${ip3}.${ip4}:${port}`;
+            
+            // 發送請求更新 ESP32 IP
+            fetch('/update_esp32_ip', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ ip: newIP })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('✅ ESP32 IP 已更新為: ' + newIP + '\n\n請稍候，系統正在重新連線...');
+                    closeSettings();
+                    setTimeout(() => location.reload(), 1000);
+                } else {
+                    alert('❌ 更新失敗: ' + (data.error || '未知錯誤'));
+                }
+            })
+            .catch(error => {
+                alert('❌ 網路錯誤: ' + error);
+            });
+        }
+
         // 選擇檔案
         document.getElementById('actionButton').addEventListener('click', function () {
             document.getElementById('fileInput').click();
+        });
+
+        // 監聽主內容區點擊事件，用於關閉側邊欄
+        document.addEventListener('DOMContentLoaded', function() {
+            const mainContent = document.getElementById('mainContent');
+            const sidebar = document.querySelector('.sidebar');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            
+            // 初始化：桌面版預設收起，手機版預設隱藏
+            if (window.innerWidth > 768) {
+                // 桌面版預設收起
+                sidebar.classList.add('collapsed');
+                sidebarToggle.classList.add('collapsed');
+                mainContent.classList.add('expanded');
+            }
+            // 手機版已經由 CSS 預設隱藏，不需要額外設定
+            
+            // 點擊主內容區時關閉側邊欄
+            mainContent.addEventListener('click', function(e) {
+                if (window.innerWidth > 768) {
+                    // 桌面版：側邊欄展開時（沒有 collapsed 類別）點擊任意地方收起
+                    if (!sidebar.classList.contains('collapsed')) {
+                        toggleSidebar();
+                    }
+                } else {
+                    // 手機版：側邊欄打開時（有 open 類別）點擊任意地方關閉
+                    if (sidebar.classList.contains('open')) {
+                        closeSidebar();
+                    }
+                }
+            });
+            
+            // 防止點擊側邊欄本身時關閉
+            sidebar.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
+            
+            // 防止點擊切換按鈕時觸發主內容區的事件
+            sidebarToggle.addEventListener('click', function(e) {
+                e.stopPropagation();
+            });
         });
 
         document.getElementById('fileInput').addEventListener('change', function (event) {
@@ -1042,6 +1575,8 @@
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send("cSetNozzleTemp<" + temp + ">");
                 document.getElementById('uploadStatus').textContent = "已送出噴嘴溫度設定: " + temp + "°C";
+                // 立即更新顯示的溫度
+                document.getElementById('nozzleTempDisplay').textContent = temp + " °C";
             } else {
                 document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出設定";
             }
@@ -1057,6 +1592,8 @@
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send("cSetBedTemp<" + temp + ">");
                 document.getElementById('uploadStatus').textContent = "已送出熱床溫度設定: " + temp + "°C";
+                // 立即更新顯示的溫度
+                document.getElementById('bedTempDisplay').textContent = temp + " °C";
             } else {
                 document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出設定";
             }
@@ -1154,7 +1691,7 @@
 
         ws.onopen = function () {
             console.log("已成功連線到後端 Flask 伺服器"); // 文字修改
-            document.getElementById('connectionStatus').textContent = "連線成功！";
+            document.getElementById('connectionStatus').textContent = "後端已連線";
             // [ 次要修改 ]
             // 您有兩個 ID 叫 'connectionStatus'，我們在這裡修正這個問題
             document.getElementById('connectionDot').classList.add('connected');
@@ -1164,6 +1701,10 @@
             if (monitorStatus) {
                 monitorStatus.textContent = "已連線到伺服器，正在檢查 ESP32...";
             }
+            
+            // 初始化 ESP32 狀態為未連線
+            document.getElementById('esp32Status').textContent = "ESP32 未連線";
+            document.getElementById('esp32Dot').classList.remove('connected');
         };
 
         ws.onmessage = function (event) {
@@ -1171,6 +1712,9 @@
 
             // [新增] 處理 ESP32 連線狀態訊息
             if (event.data === 'ESP32_CONNECTED') {
+                document.getElementById('esp32Status').textContent = "ESP32 已連線";
+                document.getElementById('esp32Dot').classList.add('connected');
+                
                 const monitorStatus = document.getElementById('monitorConnectionStatus');
                 if (monitorStatus) {
                     monitorStatus.textContent = "已連線到 ESP32";
@@ -1178,6 +1722,9 @@
                 }
                 return;
             } else if (event.data === 'ESP32_DISCONNECTED') {
+                document.getElementById('esp32Status').textContent = "ESP32 未連線";
+                document.getElementById('esp32Dot').classList.remove('connected');
+                
                 const monitorStatus = document.getElementById('monitorConnectionStatus');
                 if (monitorStatus) {
                     monitorStatus.textContent = "ESP32 未連線";
@@ -1263,8 +1810,12 @@
                 const weight = event.data.split(":")[1];
                 document.getElementById('filamentWeightDisplay').textContent = weight + " g";
             } else if (event.data.startsWith("RemainingTime:")) {
-                const time = event.data.split(":")[1];
-                document.getElementById('remainingTimeDisplay').textContent = time + " min";
+                const totalSeconds = parseInt(event.data.split(":")[1]);
+                const hours = Math.floor(totalSeconds / 3600);
+                const minutes = Math.floor((totalSeconds % 3600) / 60);
+                const seconds = totalSeconds % 60;
+                const timeStr = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+                document.getElementById('remainingTimeDisplay').textContent = timeStr;
             } else if (event.data.startsWith("Progress:")) {
                 const progress = event.data.split(":")[1];
                 const progressNum = parseFloat(progress);
