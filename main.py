@@ -12,6 +12,9 @@ import threading
 import hashlib
 import time
 import cv2
+import re
+import json
+import os
 
 # =============================================================================
 # 全域設定
@@ -19,21 +22,73 @@ import cv2
 
 class Config:
     """應用程式配置"""
-    ESP32_IP = "ws://192.168.1.147:82"
-    MAX_RECONNECT_ATTEMPTS = 5
+    CONFIG_FILE = "config.json"
+    ESP32_IP = "ws://192.168.1.147:82"  # 預設值
+    CAMERA_SOURCE = "esp32"  # 鏡頭來源: "esp32" 或 "server"
+    MAX_RECONNECT_ATTEMPTS = 10
     RECONNECT_DELAY = 1  # 秒
     POLL_INTERVAL = 5  # 秒
     UPLOAD_TIMEOUT = 50  # 秒
     CHUNK_SIZE = 2048
     CAMERA_FPS = 30
 
+    @staticmethod
+    def load_config():
+        """從檔案載入配置"""
+        try:
+            if os.path.exists(Config.CONFIG_FILE):
+                with open(Config.CONFIG_FILE, 'r', encoding='utf-8') as f:
+                    data = json.load(f)
+                    Config.ESP32_IP = data.get('esp32_ip', Config.ESP32_IP)
+                    Config.CAMERA_SOURCE = data.get('camera_source', Config.CAMERA_SOURCE)
+                    print(f"已從配置檔案載入 ESP32 IP: {Config.ESP32_IP}")
+                    print(f"已從配置檔案載入鏡頭來源: {Config.CAMERA_SOURCE}")
+            else:
+                print("配置檔案不存在,使用預設配置")
+        except Exception as e:
+            print(f"載入配置檔案失敗: {e}, 使用預設值")
+
+    @staticmethod
+    def save_config():
+        """儲存配置到檔案"""
+        try:
+            data = {
+                'esp32_ip': Config.ESP32_IP,
+                'camera_source': Config.CAMERA_SOURCE
+            }
+            with open(Config.CONFIG_FILE, 'w', encoding='utf-8') as f:
+                json.dump(data, f, ensure_ascii=False, indent=2)
+            print(f"配置已儲存到 {Config.CONFIG_FILE}")
+            return True
+        except Exception as e:
+            print(f"儲存配置檔案失敗: {e}")
+            return False
+
+    @staticmethod
+    def get_camera_url():
+        """從 WebSocket URL 解析出 HTTP 串流 URL"""
+        try:
+            # 假設格式為 ws://IP:PORT
+            match = re.search(r'ws://([^:]+)', Config.ESP32_IP)
+            if match:
+                ip = match.group(1)
+                # ESP32 HTTP server 在 port 81 (避免與其他服務衝突)
+                return f"http://{ip}:81/video_feed"
+        except Exception as e:
+            print(f"解析相機 URL 失敗: {e}")
+        return None
+
 
 # =============================================================================
-# 攝影機管理
+# 攝影機管理 (伺服器本地 USB 攝影機)
 # =============================================================================
 
 class CameraThread(threading.Thread):
-    """線程安全的攝影機管理類別"""
+    """線程安全的本地 USB 攝影機管理類別
+    
+    此類別專門處理伺服器端的 USB 攝影機，與 ESP32 攝影機完全獨立。
+    攝影機在背景持續運作，前端可以隨時取得串流。
+    """
     
     def __init__(self):
         super().__init__()
@@ -44,51 +99,66 @@ class CameraThread(threading.Thread):
         self._running = True
 
     def run(self):
-        """開啟鏡頭並持續讀取畫面"""
-        print("正在啟動攝影機線程...")
-        
-        # 嘗試使用 DSHOW 後端
-        self.camera = cv2.VideoCapture(0, cv2.CAP_DSHOW)
-        if not self.camera.isOpened():
-            print("攝影機：DSHOW 失敗，嘗試預設後端...")
-            self.camera = cv2.VideoCapture(0)
-
-        if not self.camera.isOpened():
-            print("攝影機：無法開啟 USB 鏡頭")
-            self._running = False
-            return
-
-        print("攝影機：已成功開啟")
-        frame_delay = 1.0 / Config.CAMERA_FPS
+        """開啟本地 USB 攝影機並持續讀取畫面（背景常駐）"""
+        print("伺服器 USB 攝影機線程啟動中...")
         
         while self._running:
-            success, frame = self.camera.read()
-            if not success:
-                print("攝影機：讀取失敗")
-                time.sleep(0.5)
-                continue
+            # 嘗試開啟攝影機
+            if self.camera is None or not self.camera.isOpened():
+                print("伺服器攝影機：嘗試開啟本地 USB 攝影機...")
+                self.camera = cv2.VideoCapture(0)  # 預設使用第一個攝影機
+                
+                if not self.camera.isOpened():
+                    print("伺服器攝影機：無法開啟本地 USB 攝影機，稍後重試...")
+                    time.sleep(2)
+                    continue
+                
+                print("伺服器攝影機：已成功開啟本地 USB 攝影機（背景常駐）")
 
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                print("攝影機：編碼 JPEG 失敗")
-                continue
+            frame_delay = 1.0 / Config.CAMERA_FPS
+            
+            while self._running and self.camera.isOpened():
+                success, frame = self.camera.read()
+                if not success:
+                    print("伺服器攝影機：讀取失敗，準備重新連接...")
+                    break  # 跳出內部迴圈以進行重連
 
-            with self.lock:
-                self.frame_bytes = buffer.tobytes()
+                ret, buffer = cv2.imencode('.jpg', frame)
+                if not ret:
+                    continue
 
-            time.sleep(frame_delay)
+                with self.lock:
+                    self.frame_bytes = buffer.tobytes()
 
-        self.camera.release()
-        print("攝影機：已停止")
+                time.sleep(frame_delay)
+
+            # 釋放攝影機資源
+            if self.camera:
+                self.camera.release()
+                self.camera = None
+            
+            if self._running:
+                print("伺服器攝影機：連線中斷，準備重連...")
+                time.sleep(1)
+
+        print("伺服器攝影機線程：已停止")
 
     def get_frame(self):
         """線程安全地獲取最新的 JPEG 幀"""
         with self.lock:
             return self.frame_bytes
 
+    def is_ready(self):
+        """檢查攝影機是否已就緒"""
+        with self.lock:
+            return self.frame_bytes is not None
+
     def stop(self):
-        """停止攝影機"""
+        """停止攝影機線程"""
         self._running = False
+        if self.camera:
+            self.camera.release()
+            self.camera = None
 
 
 # =============================================================================
@@ -137,21 +207,11 @@ class ESP32Connection:
             self.reconnect_attempts = 0
             self.is_connected = True
         
-        # 通知 STM32 參數輪詢由後端負責
-        time.sleep(0.1)
-        self.send("cClintStatus<1>")
         self.broadcast_to_browsers("ESP32_CONNECTED")
 
     def on_close(self, ws, code, msg):
         """ESP32 連線關閉"""
         print("WebSocket 連線關閉 (ESP32)")
-        
-        # 嘗試通知 STM32 需要自行輪詢（如果連線還可用）
-        try:
-            if self.ws:
-                self.ws.send("cClintStatus<0>")
-        except:
-            pass
         
         with self.lock:
             self.is_connected = False
@@ -265,6 +325,14 @@ def browser_ws_handler(ws_client):
             data = ws_client.receive()
             if data:
                 print(f"收到瀏覽器指令: {data}")
+                
+                # 伺服器 USB 攝影機已在背景常駐運作，不需要處理開關指令
+                # 直接忽略這些指令（前端可能還會發送，但無需處理）
+                if data == 'cEnableServerCamera' or data == 'cDisableServerCamera':
+                    print(f"伺服器攝影機已在背景運作，忽略指令: {data}")
+                    continue
+                
+                # 將其他指令轉發給 ESP32
                 if not esp32.send(data):
                     print("無法轉發，ESP32 未連線")
     except (ConnectionAbortedError, Exception) as e:
@@ -379,6 +447,10 @@ def update_esp32_ip():
         Config.ESP32_IP = new_ip
         print(f"ESP32 IP 已更新為: {new_ip}")
         
+        # 儲存配置到檔案
+        if not Config.save_config():
+            return {"success": False, "error": "無法儲存配置檔案"}, 500
+        
         # 斷開現有連線並重新連接
         if esp32.ws:
             try:
@@ -394,6 +466,45 @@ def update_esp32_ip():
     except Exception as e:
         print(f"更新 ESP32 IP 錯誤: {e}")
         return {"success": False, "error": str(e)}, 500
+
+
+@app.route("/update_camera_source", methods=["POST"])
+def update_camera_source():
+    """更新鏡頭來源設定"""
+    try:
+        data = request.get_json()
+        source = data.get("source", "").strip()
+        
+        if source not in ["esp32", "server"]:
+            return {"success": False, "error": "無效的鏡頭來源"}, 400
+        
+        # 更新配置
+        Config.CAMERA_SOURCE = source
+        print(f"鏡頭來源已更新為: {source}")
+        
+        # 儲存配置到檔案
+        if not Config.save_config():
+            return {"success": False, "error": "無法儲存配置檔案"}, 500
+        
+        return {"success": True, "source": source}, 200
+        
+    except Exception as e:
+        print(f"更新鏡頭來源錯誤: {e}")
+        return {"success": False, "error": str(e)}, 500
+
+
+@app.route("/get_esp32_camera_url", methods=["GET"])
+def get_esp32_camera_url():
+    """獲取 ESP32 相機串流 URL"""
+    try:
+        url = Config.get_camera_url()
+        if url:
+            return jsonify({"success": True, "url": url})
+        else:
+            return jsonify({"success": False, "error": "無法解析 ESP32 IP"}), 500
+    except Exception as e:
+        print(f"獲取 ESP32 相機 URL 錯誤: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 
 @app.route("/get_server_ip", methods=["GET"])
@@ -423,6 +534,20 @@ def get_server_ip():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route("/get_config", methods=["GET"])
+def get_config():
+    """獲取當前配置"""
+    try:
+        return jsonify({
+            "success": True,
+            "esp32_ip": Config.ESP32_IP,
+            "camera_source": Config.CAMERA_SOURCE
+        })
+    except Exception as e:
+        print(f"獲取配置錯誤: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
+
 # =============================================================================
 # 主程式入口
 # =============================================================================
@@ -432,6 +557,10 @@ def main():
     print("=" * 60)
     print("3D Printer Web Control System")
     print("=" * 60)
+    
+    # 載入配置
+    Config.load_config()
+    print("✓ 配置已載入")
     
     # 啟動攝影機
     camera.start()

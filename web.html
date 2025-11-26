@@ -50,12 +50,15 @@
             overflow-y: auto;
             z-index: 1000;
             transition: transform 0.3s ease;
-            left: 0;
-            transform: translateX(0); /* 桌面版預設顯示 */
+            transform: translateX(-100%); /* 預設隱藏 */
+        }
+
+        .sidebar.open {
+            transform: translateX(0); /* 展開 */
         }
         
         .sidebar.collapsed {
-            transform: translateX(-100%); /* 桌面版收起 */
+            transform: translateX(-100%); /* 收起 */
         }
 
         .sidebar-header {
@@ -201,27 +204,27 @@
         /* 主內容區 */
         .main-content {
             flex: 1;
-            margin-left: 280px;
+            margin-left: 0; /* 預設 margin-left 為 0 */
             padding: 20px;
             transition: margin-left 0.3s ease;
         }
 
         .main-content.expanded {
-            margin-left: 0;
+            margin-left: 280px; /* 側邊欄展開時的 margin */
         }
 
         /* 側邊欄切換按鈕 */
         .sidebar-toggle {
             position: fixed;
             top: 20px;
-            left: 20px; /* 預設位置（側邊欄收起時） */
+            left: 20px; /* 預設位置 */
             z-index: 2001;
             background: var(--dark-surface);
             border: 1px solid var(--border-color);
             border-radius: 8px;
             padding: 10px;
             cursor: pointer;
-            transition: left 0.3s ease, background 0.2s ease; /* 添加平滑過渡 */
+            transition: left 0.3s ease, background 0.2s ease;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -234,14 +237,9 @@
             border-color: var(--secondary-color);
         }
 
-        /* 桌面版：側邊欄展開時，按鈕移到側邊欄右側 */
-        .sidebar-toggle:not(.collapsed) {
+        /* 側邊欄展開時，按鈕的位置 */
+        .sidebar-toggle.sidebar-open {
             left: 300px;
-        }
-
-        /* 桌面版：側邊欄收起時，按鈕在左側 */
-        .sidebar-toggle.collapsed {
-            left: 20px;
         }
 
         .sidebar-toggle svg {
@@ -334,8 +332,11 @@
             }
             
             .main-content {
-                margin-left: 0;
+                margin-left: 0 !important;
                 padding: 10px;
+            }
+            .main-content.expanded {
+                margin-left: 0 !important;
             }
             .dashboard-grid {
                 grid-template-columns: 1fr; /* 改為單欄佈局 */
@@ -893,7 +894,7 @@
     
     <div class="app-container">
         <!-- 側邊欄 -->
-        <div class="sidebar">
+        <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
                 <div class="logo">3D Print Hub</div>
                 <div class="logo-subtitle">專業列印控制中心</div>
@@ -1135,73 +1136,88 @@
     </div>
 
     <script>
+        // Sidebar logic
+        document.addEventListener('DOMContentLoaded', function () {
+            const sidebar = document.getElementById('sidebar');
+            const mainContent = document.getElementById('mainContent');
+            const sidebarToggle = document.getElementById('sidebarToggle');
+            const sidebarOverlay = document.getElementById('sidebarOverlay');
+
+            function updateLayout() {
+                const isDesktop = window.innerWidth > 768;
+                const isOpen = sidebar.classList.contains('open');
+
+                if (isDesktop) {
+                    // 桌面模式
+                    // 側邊欄展開時，主內容要有左邊距
+                    mainContent.classList.toggle('expanded', isOpen);
+                    // 桌面模式不需要遮罩
+                    sidebarOverlay.classList.remove('show');
+                } else {
+                    // 手機模式
+                    // 主內容永遠沒有左邊距
+                    mainContent.classList.remove('expanded');
+                    // 側邊欄展開時顯示遮罩
+                    sidebarOverlay.classList.toggle('show', isOpen);
+                }
+                
+                // 更新按鈕位置
+                sidebarToggle.classList.toggle('sidebar-open', isOpen);
+            }
+
+            function setInitialSidebarState() {
+                // 根據要求，預設為收起狀態
+                sidebar.classList.remove('open');
+                updateLayout();
+            }
+
+            // 定義全域函數供 HTML onclick 使用
+            window.toggleSidebar = function () {
+                sidebar.classList.toggle('open');
+                updateLayout();
+            };
+
+            window.closeSidebar = function() {
+                // 手機版點擊遮罩關閉
+                sidebar.classList.remove('open');
+                updateLayout();
+            };
+            
+            window.scrollToSection = function(sectionId) {
+                const element = document.getElementById(sectionId);
+                if (element) {
+                    element.scrollIntoView({ behavior: 'smooth' });
+                }
+                // 手機版點擊連結後自動關閉側邊欄
+                if (window.innerWidth <= 768) {
+                    window.closeSidebar();
+                }
+            };
+
+            // 監聽視窗大小變化
+            window.addEventListener('resize', function() {
+                // 這裡可以加入更細緻的邏輯，例如從手機轉桌面時自動打開
+                // 目前維持現狀，只更新佈局
+                updateLayout();
+            });
+
+            // 點擊主內容區自動關閉側邊欄
+            mainContent.addEventListener('click', function() {
+                if (sidebar.classList.contains('open')) {
+                    sidebar.classList.remove('open');
+                    updateLayout();
+                }
+            });
+
+            // 初始化
+            setInitialSidebarState();
+        });
+
         let selectedFile = null;
         let cameraStream = null;
         let isCameraOn = false;
 
-        // 切換側邊欄
-        function toggleSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            const mainContent = document.getElementById('mainContent');
-            const toggleBtn = document.getElementById('sidebarToggle');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            if (window.innerWidth > 768) {
-                // 桌面版逻輯：使用 collapsed 類別
-                const isCollapsed = sidebar.classList.contains('collapsed');
-                
-                if (isCollapsed) {
-                    // 展開
-                    sidebar.classList.remove('collapsed');
-                    toggleBtn.classList.remove('collapsed');
-                    mainContent.classList.remove('expanded');
-                } else {
-                    // 收起
-                    sidebar.classList.add('collapsed');
-                    toggleBtn.classList.add('collapsed');
-                    mainContent.classList.add('expanded');
-                }
-            } else {
-                // 手機版逻輯：使用 open 類別
-                const isOpen = sidebar.classList.contains('open');
-                
-                if (isOpen) {
-                    // 關閉
-                    sidebar.classList.remove('open');
-                    toggleBtn.classList.remove('sidebar-open');
-                    if (overlay) overlay.classList.remove('show');
-                } else {
-                    // 打開
-                    sidebar.classList.add('open');
-                    toggleBtn.classList.add('sidebar-open');
-                    if (overlay) overlay.classList.add('show');
-                }
-            }
-        }
-        
-        // 關閉側邊欄
-        function closeSidebar() {
-            const sidebar = document.querySelector('.sidebar');
-            const toggleBtn = document.getElementById('sidebarToggle');
-            const overlay = document.getElementById('sidebarOverlay');
-            
-            sidebar.classList.remove('open');
-            toggleBtn.classList.remove('sidebar-open');
-            if (overlay) overlay.classList.remove('show');
-        }
-        
-        // 點擊導航項目後自動關閉側邊欄 (手機版)
-        function scrollToSection(sectionId) {
-            const element = document.getElementById(sectionId);
-            if (element) {
-                element.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }
-            // 手機版自動關閉側邊欄
-            if (window.innerWidth <= 768) {
-                closeSidebar();
-            }
-            return false;
-        }
+
 
         // 顯示關於資訊
         function showAbout() {
@@ -1346,24 +1362,109 @@
             overlay.id = 'settingsOverlay';
             
             // 建立設定視窗
-            overlay.innerHTML = `
-                <div class="settings-modal">
-                    <h3>⚡ ESP32 IP 設定</h3>
-                    <div class="ip-input-container">
-                        <span>ws://192.168.</span>
-                        <input type="number" id="ip3" min="0" max="255" value="1" />
-                        <span>.</span>
-                        <input type="number" id="ip4" min="0" max="255" value="147" />
-                        <span>:</span>
-                        <input type="number" id="port" min="1" max="65535" value="82" />
-                    </div>
-                    <div class="settings-buttons">
-                        <button class="btn-primary" onclick="saveESP32IP()">確定</button>
-                        <button class="btn-danger" onclick="closeSettings()">取消</button>
-                    </div>
-                </div>
-            `;
+            const modal = document.createElement('div');
+            modal.className = 'settings-modal';
             
+            const title = document.createElement('h3');
+            title.textContent = '⚡ ESP32 IP 設定';
+            modal.appendChild(title);
+            
+            // IP 輸入容器
+            const ipContainer = document.createElement('div');
+            ipContainer.className = 'ip-input-container';
+            
+            const span1 = document.createElement('span');
+            span1.textContent = 'ws://192.168.';
+            ipContainer.appendChild(span1);
+            
+            const ip3Input = document.createElement('input');
+            ip3Input.type = 'number';
+            ip3Input.id = 'ip3';
+            ip3Input.min = '0';
+            ip3Input.max = '255';
+            ip3Input.placeholder = '...';
+            ipContainer.appendChild(ip3Input);
+            
+            const span2 = document.createElement('span');
+            span2.textContent = '.';
+            ipContainer.appendChild(span2);
+            
+            const ip4Input = document.createElement('input');
+            ip4Input.type = 'number';
+            ip4Input.id = 'ip4';
+            ip4Input.min = '0';
+            ip4Input.max = '255';
+            ip4Input.placeholder = '...';
+            ipContainer.appendChild(ip4Input);
+            
+            const span3 = document.createElement('span');
+            span3.textContent = ':';
+            ipContainer.appendChild(span3);
+            
+            const portInput = document.createElement('input');
+            portInput.type = 'number';
+            portInput.id = 'port';
+            portInput.min = '1';
+            portInput.max = '65535';
+            portInput.placeholder = '...';
+            ipContainer.appendChild(portInput);
+            
+            modal.appendChild(ipContainer);
+
+            // 分隔線
+            const divider = document.createElement('hr');
+            divider.style.cssText = 'border: none; border-top: 1px solid var(--border-color); margin: 20px 0;';
+            modal.appendChild(divider);
+
+            // 鏡頭來源選項
+            const cameraTitle = document.createElement('h4');
+            cameraTitle.textContent = '📷 鏡頭來源';
+            cameraTitle.style.cssText = 'color: var(--text-primary); margin-bottom: 15px; font-size: 1.1rem;';
+            modal.appendChild(cameraTitle);
+
+            const cameraContainer = document.createElement('div');
+            cameraContainer.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 20px;';
+
+            const cameraLabel = document.createElement('span');
+            cameraLabel.textContent = '從以下來源開啟鏡頭：';
+            cameraLabel.style.cssText = 'color: var(--text-secondary);';
+            cameraContainer.appendChild(cameraLabel);
+
+            const cameraSelect = document.createElement('select');
+            cameraSelect.id = 'cameraSource';
+            cameraSelect.style.cssText = 'padding: 10px 15px; font-size: 1rem; border: 2px solid var(--border-color); border-radius: 8px; background: var(--dark-surface); color: var(--accent-color); font-weight: 600; cursor: pointer;';
+
+            const optionEsp32 = document.createElement('option');
+            optionEsp32.value = 'esp32';
+            optionEsp32.textContent = 'ESP32';
+            cameraSelect.appendChild(optionEsp32);
+
+            const optionServer = document.createElement('option');
+            optionServer.value = 'server';
+            optionServer.textContent = '伺服器';
+            cameraSelect.appendChild(optionServer);
+
+            cameraContainer.appendChild(cameraSelect);
+            modal.appendChild(cameraContainer);
+            
+            // 按鈕容器
+            const buttonsDiv = document.createElement('div');
+            buttonsDiv.className = 'settings-buttons';
+            
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn-primary';
+            saveBtn.textContent = '確定';
+            saveBtn.onclick = saveESP32IP;
+            buttonsDiv.appendChild(saveBtn);
+            
+            const cancelBtn = document.createElement('button');
+            cancelBtn.className = 'btn-danger';
+            cancelBtn.textContent = '取消';
+            cancelBtn.onclick = closeSettings;
+            buttonsDiv.appendChild(cancelBtn);
+            
+            modal.appendChild(buttonsDiv);
+            overlay.appendChild(modal);
             document.body.appendChild(overlay);
             
             // 點擊遮罩層關閉
@@ -1372,6 +1473,59 @@
                     closeSettings();
                 }
             });
+
+            // 從後端讀取目前的配置，並在載入完成後綁定 Enter 鍵
+            fetch('/get_config')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success && data.esp32_ip) {
+                        // 解析 IP: ws://192.168.X.Y:PORT
+                        const regex = /ws:\/\/192\.168\.(\d+)\.(\d+):(\d+)/;
+                        const match = data.esp32_ip.match(regex);
+                        
+                        if (match) {
+                            document.getElementById('ip3').value = match[1];
+                            document.getElementById('ip4').value = match[2];
+                            document.getElementById('port').value = match[3];
+                        } else {
+                            console.warn("無法解析目前的 IP 格式:", data.esp32_ip);
+                        }
+                    }
+
+                    // 設定鏡頭來源選單
+                    if (data.camera_source) {
+                        var cameraSourceEl = document.getElementById('cameraSource');
+                        if (cameraSourceEl) {
+                            cameraSourceEl.value = data.camera_source;
+                        }
+                    }
+
+                    // 在資料載入後綁定 Enter 鍵事件
+                    bindEnterKey();
+                })
+                .catch(err => {
+                    console.error("讀取配置失敗:", err);
+                    // 即使讀取失敗也要綁定 Enter 鍵
+                    bindEnterKey();
+                });
+            
+            // 綁定 Enter 鍵的函數
+            function bindEnterKey() {
+                const inputs = ['ip3', 'ip4', 'port'];
+                inputs.forEach(function(id) {
+                    const element = document.getElementById(id);
+                    if (element) {
+                        element.addEventListener('keydown', function (e) {
+                            if (e.key === 'Enter' || e.keyCode === 13) {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                saveESP32IP();
+                                return false;
+                            }
+                        });
+                    }
+                });
+            }
         }
 
         // 關閉設定視窗
@@ -1384,44 +1538,95 @@
 
         // 儲存 ESP32 IP
         function saveESP32IP() {
-            const ip3 = document.getElementById('ip3').value;
-            const ip4 = document.getElementById('ip4').value;
-            const port = document.getElementById('port').value;
-            
-            // 驗證輸入
-            if (ip3 < 0 || ip3 > 255 || ip4 < 0 || ip4 > 255) {
-                alert('❌ IP 位址範圍必須在 0-255 之間');
-                return;
-            }
-            
-            if (port < 1 || port > 65535) {
-                alert('❌ 埠號範圍必須在 1-65535 之間');
-                return;
-            }
-            
-            const newIP = `ws://192.168.${ip3}.${ip4}:${port}`;
-            
-            // 發送請求更新 ESP32 IP
-            fetch('/update_esp32_ip', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ ip: newIP })
-            })
-            .then(response => response.json())
-            .then(data => {
-                if (data.success) {
-                    alert('✅ ESP32 IP 已更新為: ' + newIP + '\n\n請稍候，系統正在重新連線...');
-                    closeSettings();
-                    setTimeout(() => location.reload(), 1000);
-                } else {
-                    alert('❌ 更新失敗: ' + (data.error || '未知錯誤'));
+            try {
+                const ip3El = document.getElementById('ip3');
+                const ip4El = document.getElementById('ip4');
+                const portEl = document.getElementById('port');
+                
+                // 檢查元素是否存在
+                if (!ip3El || !ip4El || !portEl) {
+                    console.error('無法找到輸入欄位');
+                    return;
                 }
-            })
-            .catch(error => {
-                alert('❌ 網路錯誤: ' + error);
-            });
+                
+                const ip3 = ip3El.value.trim();
+                const ip4 = ip4El.value.trim();
+                const port = portEl.value.trim();
+                
+                // 驗證輸入不為空
+                if (!ip3 || !ip4 || !port) {
+                    closeSettings();
+                    return;
+                }
+                
+                // 轉換為數字進行驗證
+                const ip3Num = parseInt(ip3);
+                const ip4Num = parseInt(ip4);
+                const portNum = parseInt(port);
+                
+                // 驗證是否為有效數字
+                if (isNaN(ip3Num) || isNaN(ip4Num) || isNaN(portNum)) {
+                    alert('❌ 請輸入有效的數字');
+                    return;
+                }
+                
+                // 驗證輸入範圍
+                if (ip3Num < 0 || ip3Num > 255 || ip4Num < 0 || ip4Num > 255) {
+                    alert('❌ IP 位址範圍必須在 0-255 之間');
+                    return;
+                }
+                
+                if (portNum < 1 || portNum > 65535) {
+                    alert('❌ 埠號範圍必須在 1-65535 之間');
+                    return;
+                }
+                
+                const newIP = 'ws://192.168.' + ip3Num + '.' + ip4Num + ':' + portNum;
+
+                // 取得鏡頭來源設定
+                var cameraSourceEl = document.getElementById('cameraSource');
+                var cameraSource = cameraSourceEl ? cameraSourceEl.value : 'esp32';
+                
+                // 發送請求更新 ESP32 IP
+                fetch('/update_esp32_ip', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ ip: newIP })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        // 繼續儲存鏡頭來源
+                        return fetch('/update_camera_source', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                            },
+                            body: JSON.stringify({ source: cameraSource })
+                        });
+                    } else {
+                        throw new Error(data.error || '更新 IP 失敗');
+                    }
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('✅ 設定已儲存\nESP32 IP: ' + newIP + '\n鏡頭來源: ' + (cameraSource === 'esp32' ? 'ESP32' : '伺服器') + '\n\n請稍候，系統正在重新連線...');
+                        closeSettings();
+                        setTimeout(function() { location.reload(); }, 1000);
+                    } else {
+                        throw new Error(data.error || '更新鏡頭來源失敗');
+                    }
+                })
+                .catch(error => {
+                    console.error('更新設定錯誤:', error);
+                    alert('❌ 錯誤: ' + error.message);
+                });
+            } catch (error) {
+                console.error('saveESP32IP 發生錯誤:', error);
+            }
         }
 
         // 選擇檔案
@@ -1429,46 +1634,7 @@
             document.getElementById('fileInput').click();
         });
 
-        // 監聽主內容區點擊事件，用於關閉側邊欄
-        document.addEventListener('DOMContentLoaded', function() {
-            const mainContent = document.getElementById('mainContent');
-            const sidebar = document.querySelector('.sidebar');
-            const sidebarToggle = document.getElementById('sidebarToggle');
-            
-            // 初始化：桌面版預設收起，手機版預設隱藏
-            if (window.innerWidth > 768) {
-                // 桌面版預設收起
-                sidebar.classList.add('collapsed');
-                sidebarToggle.classList.add('collapsed');
-                mainContent.classList.add('expanded');
-            }
-            // 手機版已經由 CSS 預設隱藏，不需要額外設定
-            
-            // 點擊主內容區時關閉側邊欄
-            mainContent.addEventListener('click', function(e) {
-                if (window.innerWidth > 768) {
-                    // 桌面版：側邊欄展開時（沒有 collapsed 類別）點擊任意地方收起
-                    if (!sidebar.classList.contains('collapsed')) {
-                        toggleSidebar();
-                    }
-                } else {
-                    // 手機版：側邊欄打開時（有 open 類別）點擊任意地方關閉
-                    if (sidebar.classList.contains('open')) {
-                        closeSidebar();
-                    }
-                }
-            });
-            
-            // 防止點擊側邊欄本身時關閉
-            sidebar.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-            
-            // 防止點擊切換按鈕時觸發主內容區的事件
-            sidebarToggle.addEventListener('click', function(e) {
-                e.stopPropagation();
-            });
-        });
+
 
         document.getElementById('fileInput').addEventListener('change', function (event) {
             const fileNameElement = document.getElementById('fileName');
@@ -1618,40 +1784,95 @@
         });
 
         // 開啟鏡頭功能 - 通過WebSocket發送指令
-        // 開啟鏡頭功能 - 直接從 Flask 伺服器獲取串流
+        // 開啟鏡頭功能 - 根據設定選擇來源
         function startCamera() {
             const cameraImg = document.getElementById('cameraStream');
             const cameraStatus = document.getElementById('cameraStatus');
 
             if (isCameraOn) {
                 cameraStatus.textContent = "鏡頭已經開啟";
+                console.log("鏡頭已經開啟,不重複開啟");
                 return;
             }
 
-            console.log("正在開啟 USB 鏡頭串流...");
+            console.log("=== 開啟鏡頭 ===");
 
-            // [ 關鍵 ] 
-            // 將 src 指向您 main.py 中的 /video_feed 路由。
-            // 使用相對路徑即可，瀏覽器會自動使用目前伺服器的主機和埠號 (http://...:5000/video_feed)
-            cameraImg.src = '/video_feed';
+            // 從後端取得配置並決定鏡頭來源
+            fetch('/get_config')
+                .then(response => response.json())
+                .then(configData => {
+                    var cameraSource = configData.camera_source || 'esp32';
+                    console.log("鏡頭來源設定:", cameraSource);
+
+                    if (cameraSource === 'server') {
+                        // 使用伺服器的 USB 攝影機，發送開啟指令給後端伺服器（不是 ESP32）
+                        console.log("使用伺服器 USB 攝影機");
+                        if (typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+                            ws.send('cEnableServerCamera');
+                            console.log("✓ 已發送 cEnableServerCamera 指令到後端");
+                        }
+                        var serverVideoUrl = window.location.protocol + '//' + window.location.host + '/video_feed';
+                        console.log("使用伺服器串流 URL:", serverVideoUrl);
+                        cameraImg.src = serverVideoUrl;
+                    } else {
+                        // 使用 ESP32 的串流，發送開啟指令
+                        if (typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+                            ws.send('cEnableCamera');
+                            console.log("✓ 已發送 cEnableCamera 指令到後端");
+                        } else {
+                            console.warn("⚠ WebSocket 未連線，但仍可嘗試開啟串流");
+                        }
+                        
+                        fetch('/get_esp32_camera_url')
+                            .then(response => response.json())
+                            .then(data => {
+                                if (data.success) {
+                                    console.log("使用 ESP32 串流 URL:", data.url);
+                                    cameraImg.src = data.url;
+                                } else {
+                                    console.error("無法獲取 ESP32 串流 URL");
+                                    cameraStatus.textContent = "無法獲取串流網址";
+                                }
+                            })
+                            .catch(err => {
+                                console.error("取得 ESP32 串流 URL 失敗:", err);
+                                cameraStatus.textContent = "取得串流網址失敗";
+                            });
+                    }
+                })
+                .catch(err => {
+                    console.error("讀取配置失敗:", err);
+                    // 預設使用 ESP32
+                    if (typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+                        ws.send('cEnableCamera');
+                    }
+                    fetch('/get_esp32_camera_url')
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                cameraImg.src = data.url;
+                            }
+                        });
+                });
 
             cameraImg.style.display = 'block';
             cameraStatus.textContent = "正在連接視訊串流...";
             isCameraOn = true;
+            console.log("isCameraOn 設為 true");
 
             // 監聽圖片載入成功
             cameraImg.onload = function () {
                 cameraStatus.textContent = "鏡頭已開啟";
-                console.log("視訊串流已連接");
+                console.log("✓ 視訊串流已成功連接");
             };
 
             // 監聽圖片載入失敗
             cameraImg.onerror = function () {
-                cameraStatus.textContent = "視訊串流連接失敗 (請檢查伺服器鏡頭)";
-                cameraImg.style.display = 'none';
-                isCameraOn = false;
-                console.error("無法載入 /video_feed");
+                console.error("✗ 無法載入視訊串流");
+                cameraStatus.textContent = "視訊串流連接失敗";
             };
+            
+            console.log("=== 開啟鏡頭完成 ===");
         }
 
         // 關閉鏡頭功能 - 通過WebSocket發送指令
@@ -1661,18 +1882,44 @@
 
             if (!isCameraOn) {
                 cameraStatus.textContent = "鏡頭已經關閉";
+                console.log("鏡頭已經關閉,不重複關閉");
                 return;
             }
 
-            console.log("正在關閉 USB 鏡頭串流...");
+            console.log("=== 關閉鏡頭 ===");
 
-            // [ 關鍵 ] 
-            // 只要清除 src，瀏覽器就會停止請求串流
+            // 從後端取得配置，根據來源發送對應的關閉指令
+            fetch('/get_config')
+                .then(response => response.json())
+                .then(configData => {
+                    var cameraSource = configData.camera_source || 'esp32';
+                    if (cameraSource === 'esp32') {
+                        // 使用 ESP32 時發送關閉指令給 ESP32
+                        if (typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+                            ws.send('cDisableCamera');
+                            console.log("✓ 已發送 cDisableCamera 指令到後端");
+                        }
+                    } else {
+                        // 使用伺服器 USB 攝影機時發送關閉指令給伺服器
+                        if (typeof ws !== 'undefined' && ws.readyState === WebSocket.OPEN) {
+                            ws.send('cDisableServerCamera');
+                            console.log("✓ 已發送 cDisableServerCamera 指令到後端");
+                        }
+                    }
+                })
+                .catch(err => {
+                    console.error("讀取配置失敗:", err);
+                });
+
+            // 清除 src，瀏覽器就會停止請求串流
+            console.log("清除視訊串流 src");
             cameraImg.src = '';
 
             cameraImg.style.display = 'none';
             cameraStatus.textContent = "鏡頭已關閉";
             isCameraOn = false;
+            console.log("isCameraOn 設為 false");
+            console.log("=== 關閉鏡頭完成 ===");
         }
 
         // 動態建立 WebSocket 連線到 "目前載入網頁的伺服器"
@@ -1758,7 +2005,9 @@
 
                 // 使用 XMLHttpRequest 以監聽上傳進度
                 const xhr = new XMLHttpRequest();
-                xhr.open('POST', 'http://192.168.1.160:5000/upload', true);
+                // 動態使用當前網頁的主機位址
+                const uploadUrl = `${window.location.protocol}//${window.location.host}/upload`;
+                xhr.open('POST', uploadUrl, true);
 
                 // 監聽上傳進度
                 xhr.upload.onprogress = function(e) {
@@ -1843,7 +2092,7 @@
 
             // (您可以在這裡加入重連邏輯)
         };
-
-</script>
+    </script>
 </body>
+
 </html>
