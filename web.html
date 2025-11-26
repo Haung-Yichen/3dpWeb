@@ -1373,9 +1373,33 @@
             const ipContainer = document.createElement('div');
             ipContainer.className = 'ip-input-container';
             
-            const span1 = document.createElement('span');
-            span1.textContent = 'ws://192.168.';
-            ipContainer.appendChild(span1);
+            const spanWs = document.createElement('span');
+            spanWs.textContent = 'ws://';
+            ipContainer.appendChild(spanWs);
+            
+            const ip1Input = document.createElement('input');
+            ip1Input.type = 'number';
+            ip1Input.id = 'ip1';
+            ip1Input.min = '0';
+            ip1Input.max = '255';
+            ip1Input.placeholder = '...';
+            ipContainer.appendChild(ip1Input);
+            
+            const spanDot1 = document.createElement('span');
+            spanDot1.textContent = '.';
+            ipContainer.appendChild(spanDot1);
+            
+            const ip2Input = document.createElement('input');
+            ip2Input.type = 'number';
+            ip2Input.id = 'ip2';
+            ip2Input.min = '0';
+            ip2Input.max = '255';
+            ip2Input.placeholder = '...';
+            ipContainer.appendChild(ip2Input);
+            
+            const spanDot2 = document.createElement('span');
+            spanDot2.textContent = '.';
+            ipContainer.appendChild(spanDot2);
             
             const ip3Input = document.createElement('input');
             ip3Input.type = 'number';
@@ -1385,9 +1409,9 @@
             ip3Input.placeholder = '...';
             ipContainer.appendChild(ip3Input);
             
-            const span2 = document.createElement('span');
-            span2.textContent = '.';
-            ipContainer.appendChild(span2);
+            const spanDot3 = document.createElement('span');
+            spanDot3.textContent = '.';
+            ipContainer.appendChild(spanDot3);
             
             const ip4Input = document.createElement('input');
             ip4Input.type = 'number';
@@ -1397,9 +1421,9 @@
             ip4Input.placeholder = '...';
             ipContainer.appendChild(ip4Input);
             
-            const span3 = document.createElement('span');
-            span3.textContent = ':';
-            ipContainer.appendChild(span3);
+            const spanColon = document.createElement('span');
+            spanColon.textContent = ':';
+            ipContainer.appendChild(spanColon);
             
             const portInput = document.createElement('input');
             portInput.type = 'number';
@@ -1479,14 +1503,16 @@
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.esp32_ip) {
-                        // 解析 IP: ws://192.168.X.Y:PORT
-                        const regex = /ws:\/\/192\.168\.(\d+)\.(\d+):(\d+)/;
+                        // 解析 IP: ws://X.X.X.X:PORT
+                        const regex = /ws:\/\/(\d+)\.(\d+)\.(\d+)\.(\d+):(\d+)/;
                         const match = data.esp32_ip.match(regex);
                         
                         if (match) {
-                            document.getElementById('ip3').value = match[1];
-                            document.getElementById('ip4').value = match[2];
-                            document.getElementById('port').value = match[3];
+                            document.getElementById('ip1').value = match[1];
+                            document.getElementById('ip2').value = match[2];
+                            document.getElementById('ip3').value = match[3];
+                            document.getElementById('ip4').value = match[4];
+                            document.getElementById('port').value = match[5];
                         } else {
                             console.warn("無法解析目前的 IP 格式:", data.esp32_ip);
                         }
@@ -1511,7 +1537,7 @@
             
             // 綁定 Enter 鍵的函數
             function bindEnterKey() {
-                const inputs = ['ip3', 'ip4', 'port'];
+                const inputs = ['ip1', 'ip2', 'ip3', 'ip4', 'port'];
                 inputs.forEach(function(id) {
                     const element = document.getElementById(id);
                     if (element) {
@@ -1539,39 +1565,46 @@
         // 儲存 ESP32 IP
         function saveESP32IP() {
             try {
+                const ip1El = document.getElementById('ip1');
+                const ip2El = document.getElementById('ip2');
                 const ip3El = document.getElementById('ip3');
                 const ip4El = document.getElementById('ip4');
                 const portEl = document.getElementById('port');
                 
                 // 檢查元素是否存在
-                if (!ip3El || !ip4El || !portEl) {
+                if (!ip1El || !ip2El || !ip3El || !ip4El || !portEl) {
                     console.error('無法找到輸入欄位');
                     return;
                 }
                 
+                const ip1 = ip1El.value.trim();
+                const ip2 = ip2El.value.trim();
                 const ip3 = ip3El.value.trim();
                 const ip4 = ip4El.value.trim();
                 const port = portEl.value.trim();
                 
                 // 驗證輸入不為空
-                if (!ip3 || !ip4 || !port) {
+                if (!ip1 || !ip2 || !ip3 || !ip4 || !port) {
                     closeSettings();
                     return;
                 }
                 
                 // 轉換為數字進行驗證
+                const ip1Num = parseInt(ip1);
+                const ip2Num = parseInt(ip2);
                 const ip3Num = parseInt(ip3);
                 const ip4Num = parseInt(ip4);
                 const portNum = parseInt(port);
                 
                 // 驗證是否為有效數字
-                if (isNaN(ip3Num) || isNaN(ip4Num) || isNaN(portNum)) {
+                if (isNaN(ip1Num) || isNaN(ip2Num) || isNaN(ip3Num) || isNaN(ip4Num) || isNaN(portNum)) {
                     alert('❌ 請輸入有效的數字');
                     return;
                 }
                 
                 // 驗證輸入範圍
-                if (ip3Num < 0 || ip3Num > 255 || ip4Num < 0 || ip4Num > 255) {
+                if (ip1Num < 0 || ip1Num > 255 || ip2Num < 0 || ip2Num > 255 || 
+                    ip3Num < 0 || ip3Num > 255 || ip4Num < 0 || ip4Num > 255) {
                     alert('❌ IP 位址範圍必須在 0-255 之間');
                     return;
                 }
@@ -1581,7 +1614,7 @@
                     return;
                 }
                 
-                const newIP = 'ws://192.168.' + ip3Num + '.' + ip4Num + ':' + portNum;
+                const newIP = 'ws://' + ip1Num + '.' + ip2Num + '.' + ip3Num + '.' + ip4Num + ':' + portNum;
 
                 // 取得鏡頭來源設定
                 var cameraSourceEl = document.getElementById('cameraSource');

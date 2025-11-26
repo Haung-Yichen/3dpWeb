@@ -440,8 +440,11 @@ def update_esp32_ip():
         if not new_ip:
             return {"success": False, "error": "IP 位址不能為空"}, 400
         
-        if not new_ip.startswith("ws://"):
-            return {"success": False, "error": "IP 格式錯誤，必須以 ws:// 開頭"}, 400
+        # 驗證格式: ws://X.X.X.X:PORT
+        import re
+        pattern = r'^ws://\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$'
+        if not re.match(pattern, new_ip):
+            return {"success": False, "error": "IP 格式錯誤，必須為 ws://X.X.X.X:PORT"}, 400
         
         # 更新配置
         Config.ESP32_IP = new_ip
