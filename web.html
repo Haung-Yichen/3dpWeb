@@ -1349,6 +1349,122 @@
             }
         }
 
+        // 顯示檔案選擇對話框
+        function showFileSelectionDialog(files) {
+            // 建立遮罩層
+            const overlay = document.createElement('div');
+            overlay.className = 'settings-overlay show';
+            overlay.id = 'fileSelectionOverlay';
+            
+            // 建立對話框
+            const modal = document.createElement('div');
+            modal.className = 'settings-modal';
+            modal.style.maxWidth = '600px';
+            
+            const title = document.createElement('h3');
+            title.textContent = '📁 選擇要列印的檔案';
+            title.style.marginBottom = '20px';
+            modal.appendChild(title);
+            
+            if (files.length === 0) {
+                const noFilesMsg = document.createElement('p');
+                noFilesMsg.textContent = 'SD 卡中沒有可列印的檔案';
+                noFilesMsg.style.cssText = 'color: var(--text-secondary); text-align: center; padding: 20px;';
+                modal.appendChild(noFilesMsg);
+                
+                const closeBtn = document.createElement('button');
+                closeBtn.className = 'btn-danger';
+                closeBtn.textContent = '關閉';
+                closeBtn.style.cssText = 'width: 100%; margin-top: 20px;';
+                closeBtn.onclick = function() { overlay.remove(); };
+                modal.appendChild(closeBtn);
+            } else {
+                // 檔案列表容器
+                const fileListContainer = document.createElement('div');
+                fileListContainer.style.cssText = 'max-height: 400px; overflow-y: auto; margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 8px;';
+                
+                let selectedFileName = null;
+                
+                files.forEach(function(filename) {
+                    const fileItem = document.createElement('div');
+                    fileItem.style.cssText = 'padding: 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;';
+                    fileItem.textContent = filename;
+                    
+                    fileItem.addEventListener('mouseenter', function() {
+                        if (selectedFileName !== filename) {
+                            fileItem.style.background = 'var(--dark-card)';
+                        }
+                    });
+                    
+                    fileItem.addEventListener('mouseleave', function() {
+                        if (selectedFileName !== filename) {
+                            fileItem.style.background = '';
+                        }
+                    });
+                    
+                    fileItem.addEventListener('click', function() {
+                        // 移除其他選中狀態
+                        const allItems = fileListContainer.querySelectorAll('div');
+                        allItems.forEach(function(item) {
+                            item.style.background = '';
+                            item.style.color = 'var(--text-primary)';
+                        });
+                        
+                        // 設定選中狀態
+                        selectedFileName = filename;
+                        fileItem.style.background = 'var(--primary-color)';
+                        fileItem.style.color = 'var(--text-primary)';
+                    });
+                    
+                    fileListContainer.appendChild(fileItem);
+                });
+                
+                modal.appendChild(fileListContainer);
+                
+                // 按鈕容器
+                const buttonsDiv = document.createElement('div');
+                buttonsDiv.className = 'settings-buttons';
+                
+                const confirmBtn = document.createElement('button');
+                confirmBtn.className = 'btn-primary';
+                confirmBtn.textContent = '確定列印';
+                confirmBtn.onclick = function() {
+                    if (!selectedFileName) {
+                        alert('請先選擇一個檔案');
+                        return;
+                    }
+                    
+                    // 發送列印指令
+                    if (ws.readyState === WebSocket.OPEN) {
+                        ws.send('cStartToPrint<' + selectedFileName + '>');
+                        document.getElementById('uploadStatus').textContent = '已送出列印指令: ' + selectedFileName;
+                        overlay.remove();
+                    } else {
+                        alert('WebSocket 未連線');
+                    }
+                };
+                buttonsDiv.appendChild(confirmBtn);
+                
+                const cancelBtn = document.createElement('button');
+                cancelBtn.className = 'btn-danger';
+                cancelBtn.textContent = '取消';
+                cancelBtn.onclick = function() { overlay.remove(); };
+                buttonsDiv.appendChild(cancelBtn);
+                
+                modal.appendChild(buttonsDiv);
+            }
+            
+            overlay.appendChild(modal);
+            document.body.appendChild(overlay);
+            
+            // 點擊遮罩層關閉
+            overlay.addEventListener('click', function(e) {
+                if (e.target === overlay) {
+                    overlay.remove();
+                }
+            });
+        }
+
         // 顯示設定視窗
         function showSettings() {
             // 手機版先關閉側邊欄
@@ -1717,8 +1833,9 @@
         // 開始列印
         document.getElementById('startPrintButton').addEventListener('click', function () {
             if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cStartToPrint");
-                document.getElementById('uploadStatus').textContent = "已送出開始列印指令";
+                // 先獲取 SD 卡中所有可列印檔案
+                ws.send("cGetAllFiles");
+                document.getElementById('uploadStatus').textContent = "正在獲取可列印檔案列表...";
             } else {
                 document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
             }
@@ -1745,7 +1862,8 @@
         });
 
         // 回原點
-        document.getElementById('homeButton').addEventListener('click', function () {
+        document.
+        getElementById('homeButton').addEventListener('click', function () {
             if (ws.readyState === WebSocket.OPEN) {
                 ws.send("cGoHome");
                 document.getElementById('uploadStatus').textContent = "已送出回原點指令";
@@ -2015,6 +2133,26 @@
 
             const espMessage = document.getElementById('espMessage');
             espMessage.textContent = "伺服器訊息: " + event.data;
+
+            // 處理檔案列表回應
+            if (event.data.startsWith('FileList:')) {
+                console.log("✓ 偵測到 FileList 訊息:", event.data);
+                const fileListStr = event.data.substring('FileList:'.length).trim();
+                console.log("✓ 解析後的檔案字串:", fileListStr);
+                const files = fileListStr.split(' ').filter(f => f.length > 0);
+                console.log("✓ 檔案陣列:", files);
+                showFileSelectionDialog(files);
+                return;
+            }
+            
+            // 處理不帶前綴的檔案列表（直接是檔名列表）
+            if (event.data.includes('.gcode')) {
+                console.log("✓ 偵測到 .gcode 檔案訊息:", event.data);
+                const files = event.data.trim().split(' ').filter(f => f.length > 0);
+                console.log("✓ 檔案陣列:", files);
+                showFileSelectionDialog(files);
+                return;
+            }
 
             if (event.data === 'STM ok') {
                 ws.send('cSetFilename<' + selectedFile.name + '>');
