@@ -25,6 +25,7 @@ class Config:
     CONFIG_FILE = "config.json"
     ESP32_IP = "ws://192.168.1.147:82"  # 預設值
     CAMERA_SOURCE = "esp32"  # 鏡頭來源: "esp32" 或 "server"
+    CAMERA_BACKGROUND = True  # 鏡頭背景長駐: True 或 False
     MAX_RECONNECT_ATTEMPTS = 10
     RECONNECT_DELAY = 1  # 秒
     POLL_INTERVAL = 5  # 秒
@@ -41,8 +42,10 @@ class Config:
                     data = json.load(f)
                     Config.ESP32_IP = data.get('esp32_ip', Config.ESP32_IP)
                     Config.CAMERA_SOURCE = data.get('camera_source', Config.CAMERA_SOURCE)
+                    Config.CAMERA_BACKGROUND = data.get('camera_background', Config.CAMERA_BACKGROUND)
                     print(f"已從配置檔案載入 ESP32 IP: {Config.ESP32_IP}")
                     print(f"已從配置檔案載入鏡頭來源: {Config.CAMERA_SOURCE}")
+                    print(f"已從配置檔案載入鏡頭背景長駐: {Config.CAMERA_BACKGROUND}")
             else:
                 print("配置檔案不存在,使用預設配置")
         except Exception as e:
@@ -54,7 +57,8 @@ class Config:
         try:
             data = {
                 'esp32_ip': Config.ESP32_IP,
-                'camera_source': Config.CAMERA_SOURCE
+                'camera_source': Config.CAMERA_SOURCE,
+                'camera_background': Config.CAMERA_BACKGROUND
             }
             with open(Config.CONFIG_FILE, 'w', encoding='utf-8') as f:
                 json.dump(data, f, ensure_ascii=False, indent=2)
@@ -87,7 +91,7 @@ class CameraThread(threading.Thread):
     """線程安全的本地 USB 攝影機管理類別
     
     此類別專門處理伺服器端的 USB 攝影機，與 ESP32 攝影機完全獨立。
-    攝影機在背景持續運作，前端可以隨時取得串流。
+    根據 Config.CAMERA_BACKGROUND 設定決定是否背景常駐。
     """
     
     def __init__(self):
@@ -97,12 +101,19 @@ class CameraThread(threading.Thread):
         self.lock = threading.Lock()
         self.camera = None
         self._running = True
+        self._enabled = False  # 用於非背景模式時控制攝影機
 
     def run(self):
-        """開啟本地 USB 攝影機並持續讀取畫面（背景常駐）"""
+        """開啟本地 USB 攝影機並持續讀取畫面"""
         print("伺服器 USB 攝影機線程啟動中...")
         
         while self._running:
+            # 如果不是背景長駐模式，等待開啟指令
+            if not Config.CAMERA_BACKGROUND:
+                if not self._enabled:
+                    time.sleep(0.1)
+                    continue
+            
             # 嘗試開啟攝影機
             if self.camera is None or not self.camera.isOpened():
                 print("伺服器攝影機：嘗試開啟本地 USB 攝影機...")
@@ -113,11 +124,17 @@ class CameraThread(threading.Thread):
                     time.sleep(2)
                     continue
                 
-                print("伺服器攝影機：已成功開啟本地 USB 攝影機（背景常駐）")
+                mode = "背景常駐" if Config.CAMERA_BACKGROUND else "按需開啟"
+                print(f"伺服器攝影機：已成功開啟本地 USB 攝影機（{mode}）")
 
             frame_delay = 1.0 / Config.CAMERA_FPS
             
             while self._running and self.camera.isOpened():
+                # 如果不是背景模式且被禁用，則關閉攝影機
+                if not Config.CAMERA_BACKGROUND and not self._enabled:
+                    print("伺服器攝影機：收到關閉指令")
+                    break
+                
                 success, frame = self.camera.read()
                 if not success:
                     print("伺服器攝影機：讀取失敗，準備重新連接...")
@@ -137,11 +154,23 @@ class CameraThread(threading.Thread):
                 self.camera.release()
                 self.camera = None
             
-            if self._running:
+            if self._running and (Config.CAMERA_BACKGROUND or self._enabled):
                 print("伺服器攝影機：連線中斷，準備重連...")
                 time.sleep(1)
 
         print("伺服器攝影機線程：已停止")
+
+    def enable(self):
+        """開啟攝影機（用於非背景模式）"""
+        self._enabled = True
+        print("伺服器攝影機：已啟用")
+
+    def disable(self):
+        """關閉攝影機（用於非背景模式）"""
+        self._enabled = False
+        with self.lock:
+            self.frame_bytes = None
+        print("伺服器攝影機：已禁用")
 
     def get_frame(self):
         """線程安全地獲取最新的 JPEG 幀"""
@@ -326,10 +355,21 @@ def browser_ws_handler(ws_client):
             if data:
                 print(f"收到瀏覽器指令: {data}")
                 
-                # 伺服器 USB 攝影機已在背景常駐運作，不需要處理開關指令
-                # 直接忽略這些指令（前端可能還會發送，但無需處理）
-                if data == 'cEnableServerCamera' or data == 'cDisableServerCamera':
-                    print(f"伺服器攝影機已在背景運作，忽略指令: {data}")
+                # 處理伺服器 USB 攝影機指令
+                if data == 'cEnableServerCamera':
+                    if Config.CAMERA_BACKGROUND:
+                        print("伺服器攝影機已在背景常駐運作，忽略開啟指令")
+                    else:
+                        camera.enable()
+                        print("伺服器攝影機：已開啟")
+                    continue
+                    
+                if data == 'cDisableServerCamera':
+                    if Config.CAMERA_BACKGROUND:
+                        print("伺服器攝影機已在背景常駐運作，忽略關閉指令")
+                    else:
+                        camera.disable()
+                        print("伺服器攝影機：已關閉")
                     continue
                 
                 # 將其他指令轉發給 ESP32
@@ -544,11 +584,34 @@ def get_config():
         return jsonify({
             "success": True,
             "esp32_ip": Config.ESP32_IP,
-            "camera_source": Config.CAMERA_SOURCE
+            "camera_source": Config.CAMERA_SOURCE,
+            "camera_background": Config.CAMERA_BACKGROUND
         })
     except Exception as e:
         print(f"獲取配置錯誤: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
+
+@app.route("/update_camera_background", methods=["POST"])
+def update_camera_background():
+    """更新鏡頭背景長駐設定"""
+    try:
+        data = request.get_json()
+        enabled = data.get("enabled", True)
+        
+        # 更新配置
+        Config.CAMERA_BACKGROUND = bool(enabled)
+        print(f"鏡頭背景長駐已更新為: {Config.CAMERA_BACKGROUND}")
+        
+        # 儲存配置到檔案
+        if not Config.save_config():
+            return {"success": False, "error": "無法儲存配置檔案"}, 500
+        
+        return {"success": True, "enabled": Config.CAMERA_BACKGROUND}, 200
+        
+    except Exception as e:
+        print(f"更新鏡頭背景長駐錯誤: {e}")
+        return {"success": False, "error": str(e)}, 500
 
 
 # =============================================================================

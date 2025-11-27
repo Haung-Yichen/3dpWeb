@@ -50,15 +50,18 @@
             overflow-y: auto;
             z-index: 1000;
             transition: transform 0.3s ease;
-            transform: translateX(-100%); /* 預設隱藏 */
+            transform: translateX(-100%);
+            /* 預設隱藏 */
         }
 
         .sidebar.open {
-            transform: translateX(0); /* 展開 */
+            transform: translateX(0);
+            /* 展開 */
         }
-        
+
         .sidebar.collapsed {
-            transform: translateX(-100%); /* 收起 */
+            transform: translateX(-100%);
+            /* 收起 */
         }
 
         .sidebar-header {
@@ -143,11 +146,47 @@
         .settings-modal {
             background: var(--dark-card);
             border: 1px solid var(--border-color);
-            border-radius: 12px;
-            padding: 30px;
+            border-radius: 16px;
+            padding: 0;
             width: 90%;
-            max-width: 500px;
-            box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+            max-width: 420px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+            overflow: hidden;
+        }
+
+        .settings-header {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .settings-header h3 {
+            color: #fff;
+            margin: 0;
+            font-size: 1.1rem;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+        }
+
+        .settings-body {
+            padding: 24px;
+        }
+
+        .settings-section {
+            margin-bottom: 20px;
+        }
+
+        .settings-section:last-child {
+            margin-bottom: 0;
+        }
+
+        .settings-section-title {
+            color: var(--text-secondary);
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 12px;
         }
 
         .settings-modal h3 {
@@ -159,32 +198,169 @@
         .ip-input-container {
             display: flex;
             align-items: center;
-            gap: 8px;
-            margin-bottom: 20px;
-            flex-wrap: wrap;
+            gap: 4px;
+            background: var(--dark-surface);
+            padding: 12px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
         }
 
         .ip-input-container span {
-            color: var(--text-primary);
-            font-size: 1.2rem;
-            font-weight: 600;
+            color: var(--text-secondary);
+            font-size: 0.95rem;
+            font-weight: 500;
+            font-family: 'SF Mono', 'Consolas', monospace;
         }
 
         .ip-input-container input[type="number"] {
-            width: 70px;
-            padding: 10px;
-            font-size: 1rem;
+            width: 48px;
+            padding: 6px 4px;
+            font-size: 0.95rem;
             text-align: center;
-            border: 2px solid var(--border-color);
-            border-radius: 8px;
-            background: var(--dark-surface);
-            color: #10b981;
+            border: none;
+            border-radius: 6px;
+            background: var(--dark-card);
+            color: var(--accent-color);
             font-weight: 600;
+            font-family: 'SF Mono', 'Consolas', monospace;
+            -moz-appearance: textfield;
+        }
+
+        .ip-input-container input[type="number"]::-webkit-outer-spin-button,
+        .ip-input-container input[type="number"]::-webkit-inner-spin-button {
+            -webkit-appearance: none;
+            margin: 0;
         }
 
         .ip-input-container input[type="number"]:focus {
-            border-color: var(--secondary-color);
+            background: rgba(16, 185, 129, 0.1);
             outline: none;
+        }
+
+        .ip-input-container input#port {
+            width: 60px;
+        }
+
+        .settings-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            background: var(--dark-surface);
+            padding: 14px 16px;
+            border-radius: 10px;
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-row-label {
+            color: var(--text-primary);
+            font-size: 0.9rem;
+            font-weight: 500;
+        }
+
+        .settings-select {
+            padding: 8px 12px;
+            font-size: 0.85rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--dark-card);
+            color: var(--accent-color);
+            font-weight: 600;
+            cursor: pointer;
+            min-width: 100px;
+        }
+
+        .settings-select:focus {
+            outline: none;
+        }
+
+        .toggle-switch {
+            position: relative;
+            width: 44px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #3f3f46;
+            transition: 0.2s;
+            border-radius: 24px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: 0.2s;
+            border-radius: 50%;
+        }
+
+        .toggle-switch input:checked+.toggle-slider {
+            background-color: var(--primary-color);
+        }
+
+        .toggle-switch input:checked+.toggle-slider:before {
+            transform: translateX(20px);
+        }
+
+        .settings-hint {
+            color: var(--text-secondary);
+            font-size: 0.7rem;
+            margin-top: 4px;
+            opacity: 0.7;
+        }
+
+        .settings-footer {
+            display: flex;
+            gap: 10px;
+            padding: 16px 24px;
+            background: var(--dark-surface);
+            border-top: 1px solid var(--border-color);
+        }
+
+        .settings-footer button {
+            flex: 1;
+            padding: 12px 20px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: 600;
+            border: none;
+            transition: all 0.2s;
+        }
+
+        .settings-footer .btn-primary {
+            background: var(--primary-color);
+            color: #fff;
+        }
+
+        .settings-footer .btn-primary:hover {
+            background: #0ea5e9;
+        }
+
+        .settings-footer .btn-secondary {
+            background: transparent;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-color);
+        }
+
+        .settings-footer .btn-secondary:hover {
+            background: var(--dark-card);
+            color: var(--text-primary);
         }
 
         .settings-buttons {
@@ -204,20 +380,23 @@
         /* 主內容區 */
         .main-content {
             flex: 1;
-            margin-left: 0; /* 預設 margin-left 為 0 */
+            margin-left: 0;
+            /* 預設 margin-left 為 0 */
             padding: 20px;
             transition: margin-left 0.3s ease;
         }
 
         .main-content.expanded {
-            margin-left: 280px; /* 側邊欄展開時的 margin */
+            margin-left: 280px;
+            /* 側邊欄展開時的 margin */
         }
 
         /* 側邊欄切換按鈕 */
         .sidebar-toggle {
             position: fixed;
             top: 20px;
-            left: 20px; /* 預設位置 */
+            left: 20px;
+            /* 預設位置 */
             z-index: 2001;
             background: var(--dark-surface);
             border: 1px solid var(--border-color);
@@ -319,62 +498,80 @@
 
         @media (max-width: 768px) {
             .sidebar {
-                transform: translateX(-100%); /* 手機版預設隱藏 */
+                transform: translateX(-100%);
+                /* 手機版預設隱藏 */
                 z-index: 2000;
             }
-            
+
             .sidebar.open {
-                transform: translateX(0); /* 手機版展開 */
+                transform: translateX(0);
+                /* 手機版展開 */
             }
-            
+
             .sidebar.collapsed {
-                transform: translateX(-100%); /* 手機版收起 */
+                transform: translateX(-100%);
+                /* 手機版收起 */
             }
-            
+
             .main-content {
                 margin-left: 0 !important;
                 padding: 10px;
             }
+
             .main-content.expanded {
                 margin-left: 0 !important;
             }
+
             .dashboard-grid {
-                grid-template-columns: 1fr; /* 改為單欄佈局 */
+                grid-template-columns: 1fr;
+                /* 改為單欄佈局 */
                 gap: 10px;
             }
+
             .card {
                 padding: 12px;
-                min-width: 0; /* 允許 flex/grid 項目縮小 */
+                min-width: 0;
+                /* 允許 flex/grid 項目縮小 */
             }
+
             .card-header {
                 margin-bottom: 12px;
             }
+
             .card-title {
                 font-size: 0.95rem;
             }
+
             .page-title {
                 font-size: 1.5rem;
                 margin-bottom: 15px;
             }
+
             /* 調整按鈕容器在小螢幕的表現 - 保持按鈕並排顯示 */
             .buttons-container {
                 display: flex;
                 flex-wrap: wrap;
                 gap: 6px;
             }
+
             .buttons-container button {
-                flex: 0 1 calc(50% - 6px); /* 讓按鈕平均分配並保持並排 */
+                flex: 0 1 calc(50% - 6px);
+                /* 讓按鈕平均分配並保持並排 */
                 min-width: 140px;
             }
+
             .buttons-container input[type="number"] {
-                flex: 1 1 100%; /* 輸入欄位單獨占一列較易閱讀 */
+                flex: 1 1 100%;
+                /* 輸入欄位單獨占一列較易閱讀 */
             }
+
             /* 按鈕尺寸縮小 */
             button {
                 padding: 8px 10px;
                 font-size: 12px;
                 min-height: 36px;
             }
+
             /* 輸入框尺寸縮小 */
             input[type="number"] {
                 padding: 8px 10px;
@@ -689,11 +886,13 @@
         @media (max-width: 1024px) {
             .sidebar-toggle {
                 display: flex;
-                left: 20px !important; /* 手機版預設位置 */
+                left: 20px !important;
+                /* 手機版預設位置 */
             }
 
             .sidebar-toggle.sidebar-open {
-                left: 300px !important; /* 手機版側邊欄打開時 */
+                left: 300px !important;
+                /* 手機版側邊欄打開時 */
             }
         }
 
@@ -891,7 +1090,7 @@
 <body>
     <!-- 側邊欄背景遮罩 (手機版) -->
     <div class="sidebar-overlay" id="sidebarOverlay" onclick="closeSidebar()"></div>
-    
+
     <div class="app-container">
         <!-- 側邊欄 -->
         <div class="sidebar" id="sidebar">
@@ -944,7 +1143,9 @@
                 </a>
                 <a href="#" class="nav-item" onclick="showQRCode(); return false;">
                     <svg class="nav-icon" fill="currentColor" viewBox="0 0 20 20">
-                        <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+                        <path fill-rule="evenodd"
+                            d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z"
+                            clip-rule="evenodd" />
                     </svg>
                     連結
                 </a>
@@ -961,7 +1162,9 @@
         <!-- 切換側邊欄按鈕 -->
         <button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
             <svg fill="currentColor" viewBox="0 0 20 20">
-                <path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd" />
+                <path fill-rule="evenodd"
+                    d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z"
+                    clip-rule="evenodd" />
             </svg>
         </button>
 
@@ -993,19 +1196,23 @@
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z" />
                         </svg>
                     </div>
-                    
+
                     <!-- 溫度顯示區域 -->
                     <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 20px;">
-                        <div style="background: var(--dark-surface); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div
+                            style="background: var(--dark-surface); padding: 15px; border-radius: 8px; text-align: center;">
                             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">噴嘴溫度</div>
-                            <div id="nozzleTempDisplay" style="font-size: 24px; font-weight: 700; color: var(--accent-color);">-- °C</div>
+                            <div id="nozzleTempDisplay"
+                                style="font-size: 24px; font-weight: 700; color: var(--accent-color);">-- °C</div>
                         </div>
-                        <div style="background: var(--dark-surface); padding: 15px; border-radius: 8px; text-align: center;">
+                        <div
+                            style="background: var(--dark-surface); padding: 15px; border-radius: 8px; text-align: center;">
                             <div style="font-size: 12px; color: var(--text-secondary); margin-bottom: 5px;">熱床溫度</div>
-                            <div id="bedTempDisplay" style="font-size: 24px; font-weight: 700; color: var(--danger-color);">-- °C</div>
+                            <div id="bedTempDisplay"
+                                style="font-size: 24px; font-weight: 700; color: var(--danger-color);">-- °C</div>
                         </div>
                     </div>
-                    
+
                     <!-- 溫度設定 -->
                     <div class="buttons-container">
                         <input type="number" id="nozzleTempInput" placeholder="噴嘴溫度 (°C)" value="200">
@@ -1026,27 +1233,33 @@
                                 d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" />
                         </svg>
                     </div>
-                    
+
                     <!-- 列印進度 -->
                     <div style="margin-bottom: 20px;">
-                        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                        <div
+                            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
                             <span style="font-size: 14px; color: var(--text-secondary);">列印進度</span>
-                            <span id="progressDisplay" style="font-size: 18px; font-weight: 700; color: var(--accent-color);">-- %</span>
+                            <span id="progressDisplay"
+                                style="font-size: 18px; font-weight: 700; color: var(--accent-color);">-- %</span>
                         </div>
                         <div class="progress-bar">
                             <div id="printProgressBar" class="progress-fill" style="width: 0%"></div>
                         </div>
                     </div>
-                    
+
                     <!-- 其他狀態資訊 -->
                     <div style="display: grid; gap: 12px;">
-                        <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 6px;">
+                        <div
+                            style="display: flex; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 6px;">
                             <span style="color: var(--text-secondary);">耗材重量</span>
-                            <span id="filamentWeightDisplay" style="font-weight: 600; color: var(--text-primary);">-- g</span>
+                            <span id="filamentWeightDisplay" style="font-weight: 600; color: var(--text-primary);">--
+                                g</span>
                         </div>
-                        <div style="display: flex; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 6px;">
+                        <div
+                            style="display: flex; justify-content: space-between; padding: 10px; background: var(--dark-surface); border-radius: 6px;">
                             <span style="color: var(--text-secondary);">剩餘時間</span>
-                            <span id="remainingTimeDisplay" style="font-weight: 600; color: var(--text-primary);">-- min</span>
+                            <span id="remainingTimeDisplay" style="font-weight: 600; color: var(--text-primary);">--
+                                min</span>
                         </div>
                     </div>
                 </div>
@@ -1084,11 +1297,13 @@
                     </div>
                     <input type="file" id="fileInput" accept=".gcode,.gco" />
                     <div id="fileName">未選擇檔案</div>
-                    
+
                     <!-- 上傳進度顯示 -->
                     <div id="uploadProgressContainer">
                         <div class="progress-label">
-                            <span id="uploadStatusText"><div class="spinner"></div>正在上傳...</span>
+                            <span id="uploadStatusText">
+                                <div class="spinner"></div>正在上傳...
+                            </span>
                             <span id="uploadPercent">0%</span>
                         </div>
                         <div class="progress-bar">
@@ -1160,7 +1375,7 @@
                     // 側邊欄展開時顯示遮罩
                     sidebarOverlay.classList.toggle('show', isOpen);
                 }
-                
+
                 // 更新按鈕位置
                 sidebarToggle.classList.toggle('sidebar-open', isOpen);
             }
@@ -1177,13 +1392,13 @@
                 updateLayout();
             };
 
-            window.closeSidebar = function() {
+            window.closeSidebar = function () {
                 // 手機版點擊遮罩關閉
                 sidebar.classList.remove('open');
                 updateLayout();
             };
-            
-            window.scrollToSection = function(sectionId) {
+
+            window.scrollToSection = function (sectionId) {
                 const element = document.getElementById(sectionId);
                 if (element) {
                     element.scrollIntoView({ behavior: 'smooth' });
@@ -1195,14 +1410,14 @@
             };
 
             // 監聽視窗大小變化
-            window.addEventListener('resize', function() {
+            window.addEventListener('resize', function () {
                 // 這裡可以加入更細緻的邏輯，例如從手機轉桌面時自動打開
                 // 目前維持現狀，只更新佈局
                 updateLayout();
             });
 
             // 點擊主內容區自動關閉側邊欄
-            mainContent.addEventListener('click', function() {
+            mainContent.addEventListener('click', function () {
                 if (sidebar.classList.contains('open')) {
                     sidebar.classList.remove('open');
                     updateLayout();
@@ -1225,7 +1440,7 @@
             if (window.innerWidth <= 768) {
                 closeSidebar();
             }
-            
+
             const aboutText = `
 🔧 3D 印表機網頁控制系統
 
@@ -1264,12 +1479,12 @@
             if (window.innerWidth <= 768) {
                 closeSidebar();
             }
-            
+
             // 建立遮罩層
             const overlay = document.createElement('div');
             overlay.className = 'settings-overlay show';
             overlay.id = 'qrcodeOverlay';
-            
+
             // 建立 QR Code 視窗
             overlay.innerHTML = `
                 <div class="settings-modal" style="text-align: center;">
@@ -1284,9 +1499,9 @@
                     </div>
                 </div>
             `;
-            
+
             document.body.appendChild(overlay);
-            
+
             // 從後端獲取伺服器 IP
             fetch('/get_server_ip')
                 .then(response => response.json())
@@ -1294,18 +1509,18 @@
                     if (data.success) {
                         const serverURL = data.url;
                         document.getElementById('serverURL').textContent = serverURL;
-                        
+
                         const container = document.getElementById('qrcodeContainer');
                         if (container) {
                             const qrImage = document.createElement('img');
                             qrImage.style.width = '256px';
                             qrImage.style.height = '256px';
                             qrImage.style.display = 'block';
-                            
+
                             // 使用 api.qrserver.com
                             qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=256x256&data=${encodeURIComponent(serverURL)}`;
-                            
-                            qrImage.onerror = function() {
+
+                            qrImage.onerror = function () {
                                 // 如果失敗，顯示可複製的連結
                                 container.innerHTML = `
                                     <div style="padding: 20px; color: #333; text-align: center;">
@@ -1317,7 +1532,7 @@
                                     </div>
                                 `;
                             };
-                            
+
                             container.innerHTML = '';
                             container.appendChild(qrImage);
                         }
@@ -1332,9 +1547,9 @@
                         <p style="color: #ef4444;">錯誤: ${error.message}</p>
                     `;
                 });
-            
+
             // 點擊遮罩層關閉
-            overlay.addEventListener('click', function(e) {
+            overlay.addEventListener('click', function (e) {
                 if (e.target === overlay) {
                     closeQRCode();
                 }
@@ -1355,85 +1570,85 @@
             const overlay = document.createElement('div');
             overlay.className = 'settings-overlay show';
             overlay.id = 'fileSelectionOverlay';
-            
+
             // 建立對話框
             const modal = document.createElement('div');
             modal.className = 'settings-modal';
             modal.style.maxWidth = '600px';
-            
+
             const title = document.createElement('h3');
             title.textContent = '📁 選擇要列印的檔案';
             title.style.marginBottom = '20px';
             modal.appendChild(title);
-            
+
             if (files.length === 0) {
                 const noFilesMsg = document.createElement('p');
                 noFilesMsg.textContent = 'SD 卡中沒有可列印的檔案';
                 noFilesMsg.style.cssText = 'color: var(--text-secondary); text-align: center; padding: 20px;';
                 modal.appendChild(noFilesMsg);
-                
+
                 const closeBtn = document.createElement('button');
                 closeBtn.className = 'btn-danger';
                 closeBtn.textContent = '關閉';
                 closeBtn.style.cssText = 'width: 100%; margin-top: 20px;';
-                closeBtn.onclick = function() { overlay.remove(); };
+                closeBtn.onclick = function () { overlay.remove(); };
                 modal.appendChild(closeBtn);
             } else {
                 // 檔案列表容器
                 const fileListContainer = document.createElement('div');
                 fileListContainer.style.cssText = 'max-height: 400px; overflow-y: auto; margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 8px;';
-                
+
                 let selectedFileName = null;
-                
-                files.forEach(function(filename) {
+
+                files.forEach(function (filename) {
                     const fileItem = document.createElement('div');
                     fileItem.style.cssText = 'padding: 15px; border-bottom: 1px solid var(--border-color); cursor: pointer; transition: background 0.2s;';
                     fileItem.textContent = filename;
-                    
-                    fileItem.addEventListener('mouseenter', function() {
+
+                    fileItem.addEventListener('mouseenter', function () {
                         if (selectedFileName !== filename) {
                             fileItem.style.background = 'var(--dark-card)';
                         }
                     });
-                    
-                    fileItem.addEventListener('mouseleave', function() {
+
+                    fileItem.addEventListener('mouseleave', function () {
                         if (selectedFileName !== filename) {
                             fileItem.style.background = '';
                         }
                     });
-                    
-                    fileItem.addEventListener('click', function() {
+
+                    fileItem.addEventListener('click', function () {
                         // 移除其他選中狀態
                         const allItems = fileListContainer.querySelectorAll('div');
-                        allItems.forEach(function(item) {
+                        allItems.forEach(function (item) {
                             item.style.background = '';
                             item.style.color = 'var(--text-primary)';
                         });
-                        
+
                         // 設定選中狀態
                         selectedFileName = filename;
                         fileItem.style.background = 'var(--primary-color)';
                         fileItem.style.color = 'var(--text-primary)';
                     });
-                    
+
                     fileListContainer.appendChild(fileItem);
                 });
-                
+
                 modal.appendChild(fileListContainer);
-                
+
                 // 按鈕容器
                 const buttonsDiv = document.createElement('div');
                 buttonsDiv.className = 'settings-buttons';
-                
+
                 const confirmBtn = document.createElement('button');
                 confirmBtn.className = 'btn-primary';
                 confirmBtn.textContent = '確定列印';
-                confirmBtn.onclick = function() {
+                confirmBtn.onclick = function () {
                     if (!selectedFileName) {
                         alert('請先選擇一個檔案');
                         return;
                     }
-                    
+
                     // 發送列印指令
                     if (ws.readyState === WebSocket.OPEN) {
                         ws.send('cStartToPrint<' + selectedFileName + '>');
@@ -1444,21 +1659,21 @@
                     }
                 };
                 buttonsDiv.appendChild(confirmBtn);
-                
+
                 const cancelBtn = document.createElement('button');
                 cancelBtn.className = 'btn-danger';
                 cancelBtn.textContent = '取消';
-                cancelBtn.onclick = function() { overlay.remove(); };
+                cancelBtn.onclick = function () { overlay.remove(); };
                 buttonsDiv.appendChild(cancelBtn);
-                
+
                 modal.appendChild(buttonsDiv);
             }
-            
+
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
-            
+
             // 點擊遮罩層關閉
-            overlay.addEventListener('click', function(e) {
+            overlay.addEventListener('click', function (e) {
                 if (e.target === overlay) {
                     overlay.remove();
                 }
@@ -1471,170 +1686,222 @@
             if (window.innerWidth <= 768) {
                 closeSidebar();
             }
-            
+
             // 建立遮罩層
             const overlay = document.createElement('div');
             overlay.className = 'settings-overlay show';
             overlay.id = 'settingsOverlay';
-            
+
             // 建立設定視窗
             const modal = document.createElement('div');
             modal.className = 'settings-modal';
-            
+
+            // 標題區
+            const header = document.createElement('div');
+            header.className = 'settings-header';
             const title = document.createElement('h3');
-            title.textContent = '⚡ ESP32 IP 設定';
-            modal.appendChild(title);
-            
+            title.textContent = '系統設定';
+            header.appendChild(title);
+            modal.appendChild(header);
+
+            // 內容區
+            const body = document.createElement('div');
+            body.className = 'settings-body';
+
+            // === ESP32 連線設定區塊 ===
+            const networkSection = document.createElement('div');
+            networkSection.className = 'settings-section';
+
+            const networkTitle = document.createElement('div');
+            networkTitle.className = 'settings-section-title';
+            networkTitle.textContent = 'ESP32 連線';
+            networkSection.appendChild(networkTitle);
+
             // IP 輸入容器
             const ipContainer = document.createElement('div');
             ipContainer.className = 'ip-input-container';
-            
+
             const spanWs = document.createElement('span');
             spanWs.textContent = 'ws://';
             ipContainer.appendChild(spanWs);
-            
+
             const ip1Input = document.createElement('input');
             ip1Input.type = 'number';
             ip1Input.id = 'ip1';
             ip1Input.min = '0';
             ip1Input.max = '255';
-            ip1Input.placeholder = '...';
+            ip1Input.placeholder = '0';
             ipContainer.appendChild(ip1Input);
-            
+
             const spanDot1 = document.createElement('span');
             spanDot1.textContent = '.';
             ipContainer.appendChild(spanDot1);
-            
+
             const ip2Input = document.createElement('input');
             ip2Input.type = 'number';
             ip2Input.id = 'ip2';
             ip2Input.min = '0';
             ip2Input.max = '255';
-            ip2Input.placeholder = '...';
+            ip2Input.placeholder = '0';
             ipContainer.appendChild(ip2Input);
-            
+
             const spanDot2 = document.createElement('span');
             spanDot2.textContent = '.';
             ipContainer.appendChild(spanDot2);
-            
+
             const ip3Input = document.createElement('input');
             ip3Input.type = 'number';
             ip3Input.id = 'ip3';
             ip3Input.min = '0';
             ip3Input.max = '255';
-            ip3Input.placeholder = '...';
+            ip3Input.placeholder = '0';
             ipContainer.appendChild(ip3Input);
-            
+
             const spanDot3 = document.createElement('span');
             spanDot3.textContent = '.';
             ipContainer.appendChild(spanDot3);
-            
+
             const ip4Input = document.createElement('input');
             ip4Input.type = 'number';
             ip4Input.id = 'ip4';
             ip4Input.min = '0';
             ip4Input.max = '255';
-            ip4Input.placeholder = '...';
+            ip4Input.placeholder = '0';
             ipContainer.appendChild(ip4Input);
-            
+
             const spanColon = document.createElement('span');
             spanColon.textContent = ':';
             ipContainer.appendChild(spanColon);
-            
+
             const portInput = document.createElement('input');
             portInput.type = 'number';
             portInput.id = 'port';
             portInput.min = '1';
             portInput.max = '65535';
-            portInput.placeholder = '...';
+            portInput.placeholder = '82';
             ipContainer.appendChild(portInput);
-            
-            modal.appendChild(ipContainer);
 
-            // 分隔線
-            const divider = document.createElement('hr');
-            divider.style.cssText = 'border: none; border-top: 1px solid var(--border-color); margin: 20px 0;';
-            modal.appendChild(divider);
+            networkSection.appendChild(ipContainer);
+            body.appendChild(networkSection);
 
-            // 鏡頭來源選項
-            const cameraTitle = document.createElement('h4');
-            cameraTitle.textContent = '📷 鏡頭來源';
-            cameraTitle.style.cssText = 'color: var(--text-primary); margin-bottom: 15px; font-size: 1.1rem;';
-            modal.appendChild(cameraTitle);
+            // === 鏡頭設定區塊 ===
+            const cameraSection = document.createElement('div');
+            cameraSection.className = 'settings-section';
 
-            const cameraContainer = document.createElement('div');
-            cameraContainer.style.cssText = 'display: flex; align-items: center; gap: 10px; margin-bottom: 20px;';
+            const cameraTitle = document.createElement('div');
+            cameraTitle.className = 'settings-section-title';
+            cameraTitle.textContent = '鏡頭';
+            cameraSection.appendChild(cameraTitle);
+
+            // 鏡頭來源
+            const cameraRow = document.createElement('div');
+            cameraRow.className = 'settings-row';
+            cameraRow.style.marginBottom = '10px';
 
             const cameraLabel = document.createElement('span');
-            cameraLabel.textContent = '從以下來源開啟鏡頭：';
-            cameraLabel.style.cssText = 'color: var(--text-secondary);';
-            cameraContainer.appendChild(cameraLabel);
+            cameraLabel.className = 'settings-row-label';
+            cameraLabel.textContent = '來源';
+            cameraRow.appendChild(cameraLabel);
 
             const cameraSelect = document.createElement('select');
             cameraSelect.id = 'cameraSource';
-            cameraSelect.style.cssText = 'padding: 10px 15px; font-size: 1rem; border: 2px solid var(--border-color); border-radius: 8px; background: var(--dark-surface); color: var(--accent-color); font-weight: 600; cursor: pointer;';
+            cameraSelect.className = 'settings-select';
 
             const optionEsp32 = document.createElement('option');
             optionEsp32.value = 'esp32';
-            optionEsp32.textContent = 'ESP32';
+            optionEsp32.textContent = 'ESP32-CAM';
             cameraSelect.appendChild(optionEsp32);
 
             const optionServer = document.createElement('option');
             optionServer.value = 'server';
-            optionServer.textContent = '伺服器';
+            optionServer.textContent = '伺服器 USB';
             cameraSelect.appendChild(optionServer);
 
-            cameraContainer.appendChild(cameraSelect);
-            modal.appendChild(cameraContainer);
-            
-            // 按鈕容器
-            const buttonsDiv = document.createElement('div');
-            buttonsDiv.className = 'settings-buttons';
-            
-            const saveBtn = document.createElement('button');
-            saveBtn.className = 'btn-primary';
-            saveBtn.textContent = '確定';
-            saveBtn.onclick = saveESP32IP;
-            buttonsDiv.appendChild(saveBtn);
-            
+            cameraRow.appendChild(cameraSelect);
+            cameraSection.appendChild(cameraRow);
+
+            // 鏡頭背景長駐
+            const bgRow = document.createElement('div');
+            bgRow.className = 'settings-row';
+
+            const bgLabelContainer = document.createElement('div');
+
+            const bgLabel = document.createElement('span');
+            bgLabel.className = 'settings-row-label';
+            bgLabel.textContent = '背景長駐';
+            bgLabelContainer.appendChild(bgLabel);
+
+            const bgHint = document.createElement('div');
+            bgHint.className = 'settings-hint';
+            bgHint.textContent = '重啟伺服器後生效';
+            bgLabelContainer.appendChild(bgHint);
+
+            bgRow.appendChild(bgLabelContainer);
+
+            const toggleWrapper = document.createElement('label');
+            toggleWrapper.className = 'toggle-switch';
+
+            const toggleInput = document.createElement('input');
+            toggleInput.type = 'checkbox';
+            toggleInput.id = 'cameraBackground';
+
+            const toggleSlider = document.createElement('span');
+            toggleSlider.className = 'toggle-slider';
+
+            toggleWrapper.appendChild(toggleInput);
+            toggleWrapper.appendChild(toggleSlider);
+            bgRow.appendChild(toggleWrapper);
+
+            cameraSection.appendChild(bgRow);
+            body.appendChild(cameraSection);
+
+            modal.appendChild(body);
+
+            // 底部按鈕
+            const footer = document.createElement('div');
+            footer.className = 'settings-footer';
+
             const cancelBtn = document.createElement('button');
-            cancelBtn.className = 'btn-danger';
+            cancelBtn.className = 'btn-secondary';
             cancelBtn.textContent = '取消';
             cancelBtn.onclick = closeSettings;
-            buttonsDiv.appendChild(cancelBtn);
-            
-            modal.appendChild(buttonsDiv);
+            footer.appendChild(cancelBtn);
+
+            const saveBtn = document.createElement('button');
+            saveBtn.className = 'btn-primary';
+            saveBtn.textContent = '儲存設定';
+            saveBtn.onclick = saveESP32IP;
+            footer.appendChild(saveBtn);
+
+            modal.appendChild(footer);
             overlay.appendChild(modal);
             document.body.appendChild(overlay);
-            
+
             // 點擊遮罩層關閉
-            overlay.addEventListener('click', function(e) {
+            overlay.addEventListener('click', function (e) {
                 if (e.target === overlay) {
                     closeSettings();
                 }
             });
 
-            // 從後端讀取目前的配置，並在載入完成後綁定 Enter 鍵
+            // 從後端讀取目前的配置
             fetch('/get_config')
                 .then(response => response.json())
                 .then(data => {
                     if (data.success && data.esp32_ip) {
-                        // 解析 IP: ws://X.X.X.X:PORT
                         const regex = /ws:\/\/(\d+)\.(\d+)\.(\d+)\.(\d+):(\d+)/;
                         const match = data.esp32_ip.match(regex);
-                        
+
                         if (match) {
                             document.getElementById('ip1').value = match[1];
                             document.getElementById('ip2').value = match[2];
                             document.getElementById('ip3').value = match[3];
                             document.getElementById('ip4').value = match[4];
                             document.getElementById('port').value = match[5];
-                        } else {
-                            console.warn("無法解析目前的 IP 格式:", data.esp32_ip);
                         }
                     }
 
-                    // 設定鏡頭來源選單
+                    // 設定鏡頭來源
                     if (data.camera_source) {
                         var cameraSourceEl = document.getElementById('cameraSource');
                         if (cameraSourceEl) {
@@ -1642,19 +1909,23 @@
                         }
                     }
 
-                    // 在資料載入後綁定 Enter 鍵事件
+                    // 設定鏡頭背景長駐
+                    var bgToggle = document.getElementById('cameraBackground');
+                    if (bgToggle) {
+                        bgToggle.checked = data.camera_background !== false;
+                    }
+
                     bindEnterKey();
                 })
                 .catch(err => {
                     console.error("讀取配置失敗:", err);
-                    // 即使讀取失敗也要綁定 Enter 鍵
                     bindEnterKey();
                 });
-            
-            // 綁定 Enter 鍵的函數
+
+            // 綁定 Enter 鍵
             function bindEnterKey() {
                 const inputs = ['ip1', 'ip2', 'ip3', 'ip4', 'port'];
-                inputs.forEach(function(id) {
+                inputs.forEach(function (id) {
                     const element = document.getElementById(id);
                     if (element) {
                         element.addEventListener('keydown', function (e) {
@@ -1686,56 +1957,60 @@
                 const ip3El = document.getElementById('ip3');
                 const ip4El = document.getElementById('ip4');
                 const portEl = document.getElementById('port');
-                
+
                 // 檢查元素是否存在
                 if (!ip1El || !ip2El || !ip3El || !ip4El || !portEl) {
                     console.error('無法找到輸入欄位');
                     return;
                 }
-                
+
                 const ip1 = ip1El.value.trim();
                 const ip2 = ip2El.value.trim();
                 const ip3 = ip3El.value.trim();
                 const ip4 = ip4El.value.trim();
                 const port = portEl.value.trim();
-                
+
                 // 驗證輸入不為空
                 if (!ip1 || !ip2 || !ip3 || !ip4 || !port) {
                     closeSettings();
                     return;
                 }
-                
+
                 // 轉換為數字進行驗證
                 const ip1Num = parseInt(ip1);
                 const ip2Num = parseInt(ip2);
                 const ip3Num = parseInt(ip3);
                 const ip4Num = parseInt(ip4);
                 const portNum = parseInt(port);
-                
+
                 // 驗證是否為有效數字
                 if (isNaN(ip1Num) || isNaN(ip2Num) || isNaN(ip3Num) || isNaN(ip4Num) || isNaN(portNum)) {
                     alert('❌ 請輸入有效的數字');
                     return;
                 }
-                
+
                 // 驗證輸入範圍
-                if (ip1Num < 0 || ip1Num > 255 || ip2Num < 0 || ip2Num > 255 || 
+                if (ip1Num < 0 || ip1Num > 255 || ip2Num < 0 || ip2Num > 255 ||
                     ip3Num < 0 || ip3Num > 255 || ip4Num < 0 || ip4Num > 255) {
                     alert('❌ IP 位址範圍必須在 0-255 之間');
                     return;
                 }
-                
+
                 if (portNum < 1 || portNum > 65535) {
                     alert('❌ 埠號範圍必須在 1-65535 之間');
                     return;
                 }
-                
+
                 const newIP = 'ws://' + ip1Num + '.' + ip2Num + '.' + ip3Num + '.' + ip4Num + ':' + portNum;
 
                 // 取得鏡頭來源設定
                 var cameraSourceEl = document.getElementById('cameraSource');
                 var cameraSource = cameraSourceEl ? cameraSourceEl.value : 'esp32';
-                
+
+                // 取得鏡頭背景長駐設定
+                var cameraBgEl = document.getElementById('cameraBackground');
+                var cameraBackground = cameraBgEl ? cameraBgEl.checked : true;
+
                 // 發送請求更新 ESP32 IP
                 fetch('/update_esp32_ip', {
                     method: 'POST',
@@ -1744,35 +2019,51 @@
                     },
                     body: JSON.stringify({ ip: newIP })
                 })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        // 繼續儲存鏡頭來源
-                        return fetch('/update_camera_source', {
-                            method: 'POST',
-                            headers: {
-                                'Content-Type': 'application/json',
-                            },
-                            body: JSON.stringify({ source: cameraSource })
-                        });
-                    } else {
-                        throw new Error(data.error || '更新 IP 失敗');
-                    }
-                })
-                .then(response => response.json())
-                .then(data => {
-                    if (data.success) {
-                        alert('✅ 設定已儲存\nESP32 IP: ' + newIP + '\n鏡頭來源: ' + (cameraSource === 'esp32' ? 'ESP32' : '伺服器') + '\n\n請稍候，系統正在重新連線...');
-                        closeSettings();
-                        setTimeout(function() { location.reload(); }, 1000);
-                    } else {
-                        throw new Error(data.error || '更新鏡頭來源失敗');
-                    }
-                })
-                .catch(error => {
-                    console.error('更新設定錯誤:', error);
-                    alert('❌ 錯誤: ' + error.message);
-                });
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 繼續儲存鏡頭來源
+                            return fetch('/update_camera_source', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ source: cameraSource })
+                            });
+                        } else {
+                            throw new Error(data.error || '更新 IP 失敗');
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            // 繼續儲存鏡頭背景長駐設定
+                            return fetch('/update_camera_background', {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                },
+                                body: JSON.stringify({ enabled: cameraBackground })
+                            });
+                        } else {
+                            throw new Error(data.error || '更新鏡頭來源失敗');
+                        }
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            var bgText = cameraBackground ? '開啟' : '關閉';
+                            alert('✅ 設定已儲存\nESP32 IP: ' + newIP + '\n鏡頭來源: ' + (cameraSource === 'esp32' ? 'ESP32' : '伺服器') + '\n鏡頭背景長駐: ' + bgText + '\n\n請稍候，系統正在重新連線...');
+                            closeSettings();
+                            setTimeout(function () { location.reload(); }, 1000);
+                        } else {
+                            throw new Error(data.error || '更新鏡頭背景長駐失敗');
+                        }
+                    })
+                    .catch(error => {
+                        console.error('更新設定錯誤:', error);
+                        alert('❌ 錯誤: ' + error.message);
+                    });
             } catch (error) {
                 console.error('saveESP32IP 發生錯誤:', error);
             }
@@ -1790,7 +2081,7 @@
             if (event.target.files.length > 0) {
                 const file = event.target.files[0];
                 const fileName = file.name.toLowerCase();
-                
+
                 // 驗證副檔名
                 if (fileName.endsWith('.gcode') || fileName.endsWith('.gco')) {
                     selectedFile = file;
@@ -1863,14 +2154,14 @@
 
         // 回原點
         document.
-        getElementById('homeButton').addEventListener('click', function () {
-            if (ws.readyState === WebSocket.OPEN) {
-                ws.send("cGoHome");
-                document.getElementById('uploadStatus').textContent = "已送出回原點指令";
-            } else {
-                document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
-            }
-        });
+            getElementById('homeButton').addEventListener('click', function () {
+                if (ws.readyState === WebSocket.OPEN) {
+                    ws.send("cGoHome");
+                    document.getElementById('uploadStatus').textContent = "已送出回原點指令";
+                } else {
+                    document.getElementById('uploadStatus').textContent = "WebSocket 未連線，無法送出指令";
+                }
+            });
 
         // 緊急停止
         document.getElementById('emergencyStopButton').addEventListener('click', function () {
@@ -1973,7 +2264,7 @@
                         } else {
                             console.warn("⚠ WebSocket 未連線，但仍可嘗試開啟串流");
                         }
-                        
+
                         fetch('/get_esp32_camera_url')
                             .then(response => response.json())
                             .then(data => {
@@ -2022,7 +2313,7 @@
                 console.error("✗ 無法載入視訊串流");
                 cameraStatus.textContent = "視訊串流連接失敗";
             };
-            
+
             console.log("=== 開啟鏡頭完成 ===");
         }
 
@@ -2099,7 +2390,7 @@
             if (monitorStatus) {
                 monitorStatus.textContent = "已連線到伺服器，正在檢查 ESP32...";
             }
-            
+
             // 初始化 ESP32 狀態為未連線
             document.getElementById('esp32Status').textContent = "ESP32 未連線";
             document.getElementById('esp32Dot').classList.remove('connected');
@@ -2112,7 +2403,7 @@
             if (event.data === 'ESP32_CONNECTED') {
                 document.getElementById('esp32Status').textContent = "ESP32 已連線";
                 document.getElementById('esp32Dot').classList.add('connected');
-                
+
                 const monitorStatus = document.getElementById('monitorConnectionStatus');
                 if (monitorStatus) {
                     monitorStatus.textContent = "已連線到 ESP32";
@@ -2122,7 +2413,7 @@
             } else if (event.data === 'ESP32_DISCONNECTED') {
                 document.getElementById('esp32Status').textContent = "ESP32 未連線";
                 document.getElementById('esp32Dot').classList.remove('connected');
-                
+
                 const monitorStatus = document.getElementById('monitorConnectionStatus');
                 if (monitorStatus) {
                     monitorStatus.textContent = "ESP32 未連線";
@@ -2144,7 +2435,7 @@
                 showFileSelectionDialog(files);
                 return;
             }
-            
+
             // 處理不帶前綴的檔案列表（直接是檔名列表）
             if (event.data.includes('.gcode')) {
                 console.log("✓ 偵測到 .gcode 檔案訊息:", event.data);
@@ -2159,13 +2450,13 @@
                 document.getElementById('uploadStatus').textContent = 'ESP32 已回覆 STM ok，送出檔名...';
             } else if (event.data === 'Name ok') {
                 document.getElementById('uploadStatus').textContent = 'ESP32 已確認檔名，開始上傳檔案...';
-                
+
                 // 顯示進度條與轉圈圈
                 const progressContainer = document.getElementById('uploadProgressContainer');
                 const progressBar = document.getElementById('uploadProgressBar');
                 const uploadPercent = document.getElementById('uploadPercent');
                 const uploadStatusText = document.getElementById('uploadStatusText');
-                
+
                 progressContainer.style.display = 'block';
                 progressBar.style.width = '0%';
                 uploadPercent.textContent = '0%';
@@ -2181,19 +2472,19 @@
                 xhr.open('POST', uploadUrl, true);
 
                 // 監聽上傳進度
-                xhr.upload.onprogress = function(e) {
+                xhr.upload.onprogress = function (e) {
                     if (e.lengthComputable) {
                         const percentComplete = Math.round((e.loaded / e.total) * 100);
                         progressBar.style.width = percentComplete + '%';
                         uploadPercent.textContent = percentComplete + '%';
-                        
+
                         if (percentComplete === 100) {
                             uploadStatusText.innerHTML = '<div class="spinner"></div>伺服器處理中...';
                         }
                     }
                 };
 
-                xhr.onload = function() {
+                xhr.onload = function () {
                     if (xhr.status === 200) {
                         console.log('伺服器回應:', xhr.responseText);
                         document.getElementById('uploadStatus').textContent = '檔案上傳成功 可以開始列印';
@@ -2212,7 +2503,7 @@
                     }
                 };
 
-                xhr.onerror = function() {
+                xhr.onerror = function () {
                     console.error('上傳發生錯誤');
                     document.getElementById('uploadStatus').textContent = '檔案上傳發生網路錯誤';
                     uploadStatusText.innerHTML = '網路錯誤';
