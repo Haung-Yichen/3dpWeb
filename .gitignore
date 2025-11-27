@@ -202,8 +202,6 @@ main.onefile-build/
 # Config file (use config.json.example as template)
 config.json
 
-# GCode files
-*.gcode
 
 # VS Code workspace (optional, personal preference)
 *.code-workspace
